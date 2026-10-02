@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="is">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stefnurit 2025 — Reykjanesbær</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%231F559F'/%3E%3C/svg%3E">
+<style>
+  :root { color-scheme: light; }
+  body {
+    margin: 0;
+    background: #F4F6F8;
+    font: 400 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: #1B1B1F;
+  }
+  .page { max-width: 1850px; margin: 0 auto; padding: 24px 16px 64px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  p.lead { margin: 0 0 24px; color: #4A4F57; }
+  .frame { background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.12); overflow: hidden; }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0 0; }
+  button {
+    font: inherit; font-size: 14px; padding: 8px 14px; border-radius: 999px;
+    border: 1px solid #C9CED6; background: #fff; cursor: pointer;
+  }
+  button[aria-pressed="true"] { background: #1F559F; border-color: #1F559F; color: #fff; }
+  .note { margin-top: 18px; font-size: 14px; color: #4A4F57; }
+  code { background: #E9ECF1; padding: 1px 5px; border-radius: 4px; font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Stefnurit 2025</h1>
+  <p class="lead">Stefnur og samþykktir Reykjanesbæjar. Þessi síða sýnir eininguna eins og hún birtist á vef bæjarins.</p>
+
+  <div class="frame">
+    <stefnu-rit id="widget" src="../src/data/stefnurit.json"></stefnu-rit>
+  </div>
+
+  <div class="controls">
+    <button type="button" id="aa" aria-pressed="false">Herða birtuskil (WCAG AA)</button>
+    <button type="button" id="narrow" aria-pressed="false">Þrengja í 390px</button>
+  </div>
+
+  <p class="note">
+    Til að setja eininguna á aðra síðu þarf aðeins:
+    <code>&lt;script type="module" src="stefnu-rit.js"&gt;&lt;/script&gt;</code>
+    og <code>&lt;stefnu-rit src="stefnurit.json"&gt;&lt;/stefnu-rit&gt;</code>.
+  </p>
+</div>
+
+<script type="module">
+  import '../src/stefnu-rit.js';
+
+  const widget = document.getElementById('widget');
+  const frame = document.querySelector('.frame');
+
+  document.getElementById('aa').addEventListener('click', (event) => {
+    const on = event.currentTarget.getAttribute('aria-pressed') !== 'true';
+    event.currentTarget.setAttribute('aria-pressed', String(on));
+    // Token overrides work from the page, without touching the component.
+    widget.style.setProperty('--sr-color-accent', on ? '#007E99' : '');
+  });
+
+  document.getElementById('narrow').addEventListener('click', (event) => {
+    const on = event.currentTarget.getAttribute('aria-pressed') !== 'true';
+    event.currentTarget.setAttribute('aria-pressed', String(on));
+    frame.style.maxWidth = on ? '390px' : '';
+  });
+</script>
+</body>
+</html>
