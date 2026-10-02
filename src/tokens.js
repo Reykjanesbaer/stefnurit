@@ -65,6 +65,9 @@ export const TOKENS = {
 
   // ---- minimum legible text, overriding pure scaling ----------------------
   'min-font-size': '12px',
+
+  // ---- stacked layout ------------------------------------------------------
+  'stack-rail': '34',
 };
 
 /** Token names a `theme` block in the JSON (or a page) may override. */

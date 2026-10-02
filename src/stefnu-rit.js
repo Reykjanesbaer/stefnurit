@@ -14,7 +14,7 @@
  * No dependencies, no build step required, no framework.
  */
 
-import { TOKENS, THEMEABLE, REFERENCE_WIDTH, STACK_BELOW } from './tokens.js';
+import { TOKENS, THEMEABLE, REFERENCE_WIDTH, REFERENCE_HEIGHT, STACK_BELOW } from './tokens.js';
 import { FIGTREE_FACES } from './assets/fonts.js';
 import { validate } from './validate.js';
 import { routeTree, routeRail } from './lines.js';
@@ -52,8 +52,33 @@ function installFontFace(doc) {
   doc.head.append(style);
 }
 
+const tokenBlock = (tokens) => Object.entries(tokens)
+  .map(([name, value]) => `  --sr-${name}: ${value};`)
+  .join('\n');
+
+/**
+ * Reserve the element's box before it upgrades.
+ *
+ * Until the module has run, <stefnu-rit> is an unknown element and therefore
+ * zero pixels tall, so everything below it jumps the moment content lands.
+ * This runs at module scope rather than on connect, which puts it before first
+ * paint for a normal deferred module script, and it costs the embedding page
+ * nothing to remember.
+ */
+function installPlaceholderStyle(doc) {
+  if (!doc || doc.getElementById('sr-placeholder-style')) return;
+  const style = doc.createElement('style');
+  style.id = 'sr-placeholder-style';
+  style.textContent = `stefnu-rit { display: block; }
+stefnu-rit:not([data-ready]) { aspect-ratio: ${REFERENCE_WIDTH} / ${REFERENCE_HEIGHT}; }`;
+  doc.head.prepend(style);
+}
+
+if (typeof document !== 'undefined') installPlaceholderStyle(document);
+
 const css = `
 :host {
+${tokenBlock(TOKENS)}
   display: block;
   container-type: inline-size;
   contain: layout style;
@@ -309,7 +334,9 @@ export class StefnuRit extends HTMLElement {
   get target() { return this.getAttribute('target') || '_blank'; }
 
   connectedCallback() {
+    installPlaceholderStyle(this.ownerDocument);
     installFontFace(this.ownerDocument);
+    this.#reserveSpace();
     if (!this.#config && this.getAttribute('src')) this.#load(this.getAttribute('src'));
     else this.#render();
 
@@ -319,6 +346,19 @@ export class StefnuRit extends HTMLElement {
     // Lines are measured from laid-out text, so they have to be redrawn once
     // the real font replaces the fallback.
     this.ownerDocument.fonts?.ready.then(() => this.#scheduleLines());
+  }
+
+  /**
+   * The JSON arrives over the network, so without this the element is 0px tall
+   * for the first frames and everything below it jumps when the content lands.
+   * The design's own aspect ratio is a good enough placeholder.
+   */
+  #reserveSpace() {
+    if (this.#shadow.childElementCount) return;
+    this.#shadow.innerHTML =
+      `<style>:host { display: block; }
+       .placeholder { aspect-ratio: ${REFERENCE_WIDTH} / ${REFERENCE_HEIGHT}; }</style>
+       <div class="placeholder"></div>`;
   }
 
   disconnectedCallback() {
@@ -359,8 +399,8 @@ export class StefnuRit extends HTMLElement {
     }
 
     const data = this.#config;
-    this.#shadow.innerHTML = `<style>${css}</style>${this.#markup(data)}`;
-    this.#applyTokens(data.theme);
+    this.#shadow.innerHTML = `<style>${css}</style><style>${this.#themeCss(data.theme)}</style>${this.#markup(data)}`;
+    this.setAttribute('data-ready', '');
     this.#scheduleLines();
   }
 
@@ -373,17 +413,20 @@ export class StefnuRit extends HTMLElement {
       </div>`;
   }
 
-  #applyTokens(theme) {
-    const root = this.#shadow.querySelector('.root');
-    if (!root) return;
-    for (const [name, value] of Object.entries(TOKENS)) {
-      root.style.setProperty(`--sr-${name}`, value);
-    }
-    for (const [name, value] of Object.entries(theme || {})) {
-      if (THEMEABLE.includes(name)) root.style.setProperty(`--sr-${name}`, String(value));
-      else console.warn(`[stefnu-rit] theme: "${name}" is not a known token, ignored`);
-    }
-    root.style.setProperty('--sr-stack-rail', '34');
+  /**
+   * Token precedence, lowest to highest: component defaults (in the
+   * stylesheet) < the JSON `theme` block (a later :host rule) < whatever the
+   * page sets inline on the element. Writing the defaults inline on .root
+   * instead would outrank the page and make `theme` the only way in.
+   */
+  #themeCss(theme) {
+    const overrides = Object.entries(theme || {}).filter(([name]) => {
+      if (THEMEABLE.includes(name)) return true;
+      console.warn(`[stefnu-rit] theme: "${name}" is not a known token, ignored`);
+      return false;
+    });
+    if (!overrides.length) return '';
+    return `:host {\n${overrides.map(([n, v]) => `  --sr-${n}: ${v};`).join('\n')}\n}`;
   }
 
   #markup(data) {
