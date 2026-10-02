@@ -1,0 +1,241 @@
+{
+  "$schema": "./stefnurit.schema.json",
+  "title": "Stefnurit 2025",
+  "lang": "is",
+  "theme": {},
+  "sections": [
+    {
+      "id": "rot",
+      "kind": "root",
+      "items": [
+        {
+          "id": "stefna-reykjanesbaejar",
+          "label": "Stefna Reykjanesbæjar",
+          "href": "https://www.reykjanesbaer.is/static/files/pdf_skjol_allir/samthykkt-stefna_uppfaert-utlit_25feb2020.pdf",
+          "kind": "pdf",
+          "colorToken": "pill"
+        }
+      ]
+    },
+    {
+      "id": "yfirstefnur",
+      "kind": "branch",
+      "items": [
+        {
+          "id": "mannrettindastefna",
+          "label": "Mannréttindastefna",
+          "href": "https://www.reykjanesbaer.is/static/files/pdf_skjol_allir/2024/desember/mannrettindastefna-reykjanesbaejar-2024.pdf",
+          "kind": "pdf",
+          "colorToken": "pill"
+        },
+        {
+          "id": "tjonustu-og-gaedastefna",
+          "label": "Þjónustu- og gæðastefna",
+          "href": "https://www.reykjanesbaer.is/static/files/pdf_skjol_allir/2023/januar/gaeda_og_tjonustustefna_2020_2025.pdf",
+          "kind": "pdf",
+          "colorToken": "accent"
+        }
+      ]
+    },
+    {
+      "id": "malaflokkar",
+      "kind": "columns",
+      "columns": [
+        {
+          "id": "dalkur-stjornsysla",
+          "cards": [
+            {
+              "id": "stjornsysla",
+              "title": "Stjórnsýsla",
+              "colorToken": "accent",
+              "items": [
+                {
+                  "id": "innkaupastefna",
+                  "label": "Innkaupastefna",
+                  "href": "https://www.reykjanesbaer.is/static/files/pdf_skjol_allir/innkaupastefna-reykjanesbaejar.pdf",
+                  "kind": "pdf"
+                },
+                {
+                  "id": "personuverndarstefna",
+                  "label": "Persónuverndarstefna",
+                  "href": "https://www.reykjanesbaer.is/static/files/pdf_skjol_allir/personuverndarstefna-reykjanesbaejar_ny.pdf",
+                  "kind": "pdf"
+                },
+                {
+                  "id": "stefna-i-skjalamalum",
+                  "label": "Stefna Reykjanesbæjar í skjalamálum",
+                  "href": "https://www.reykjanesbaer.is/static/files/pdf_skjol_allir/stefna-reykjanesbaejar-i-skjalamalum.pdf",
+                  "kind": "pdf"
+                },
+                {
+                  "id": "upplysingataeknistefna",
+                  "label": "Upplýsingatæknistefna",
+                  "href": "https://www.reykjanesbaer.is/static/files/pdf_skjol_allir/upplysingataeknistefna-reykjanesbaejar.pdf",
+                  "kind": "pdf"
+                },
+                {
+                  "id": "upplysingaoryggisstefna",
+                  "label": "Upplýsingaöryggisstefna",
+                  "href": "https://www.reykjanesbaer.is/static/files/pdf_skjol_allir/upplysingaoryggisstefna_samthykkt.pdf",
+                  "kind": "pdf"
+                },
+                {
+                  "id": "vafrakokustefna",
+                  "label": "Vafrakökustefna",
+                  "href": "https://www.reykjanesbaer.is/static/files/pdf_skjol_allir/vafrakokustefna_ny.pdf",
+                  "kind": "pdf"
+                },
+                {
+                  "id": "atvinnustefna",
+                  "label": "Atvinnustefna",
+                  "href": "https://www.reykjanesbaer.is/static/files/Reykjaneshofn/atvinnustefna_2025-2035.pdf",
+                  "kind": "pdf"
+                },
+                {
+                  "id": "vefstefna",
+                  "label": "Vefstefna",
+                  "href": "https://www.reykjanesbaer.is/static/files/pdf_skjol_allir/2024/vefstefna-2024-2027.pdf",
+                  "kind": "pdf"
+                }
+              ]
+            },
+            {
+              "id": "mannaudsmal",
+              "title": "Mannauðsmál",
+              "colorToken": "accent",
+              "items": [
+                {
+                  "id": "ekko",
+                  "label": "EKKO",
+                  "href": "https://www.reykjanesbaer.is/static/files/pdf_skjol_allir/2022/stefna-og-vidbragdsaaetlun-ekko-2022.pdf",
+                  "kind": "pdf",
+                  "note": "Stefna og viðbragðsáætlun gegn einelti, kynferðislegri áreitni, kynbundinni áreitni og ofbeldi"
+                },
+                {
+                  "id": "jafnlaunastefna",
+                  "label": "Jafnlaunastefna",
+                  "href": "https://www.reykjanesbaer.is/static/files/pdf_skjol_allir/2026/4.2-jafnlaunastefna-8.4.2026.pdf",
+                  "kind": "pdf"
+                },
+                {
+                  "id": "mannaudsstefna",
+                  "label": "Mannauðsstefna",
+                  "href": "https://www.reykjanesbaer.is/static/files/pdf_skjol_allir/2023/september/mannaudsstefna_reykjanesbaejar.pdf",
+                  "kind": "pdf"
+                },
+                {
+                  "id": "fraedslustefna",
+                  "label": "Fræðslustefna",
+                  "href": "https://www.reykjanesbaer.is/static/files/pdf_skjol_allir/2025/fraedslustefna.pdf",
+                  "kind": "pdf"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "dalkur-menningarmal",
+          "cards": [
+            {
+              "id": "menningarmal",
+              "title": "Menningarmál",
+              "colorToken": "primary",
+              "items": [
+                {
+                  "id": "ferdamalastefna",
+                  "label": "Ferðamálastefna",
+                  "href": "https://www.reykjanesbaer.is/static/files/pdf_skjol_allir/ferdamalastefna-reykjanesbaejar_nyrri.pdf",
+                  "kind": "pdf"
+                },
+                {
+                  "id": "markadstefna",
+                  "label": "Markaðstefna",
+                  "href": "https://www.reykjanesbaer.is/static/files/pdf_skjol_allir/2024/markadsstefna_2023_2028.pdf",
+                  "kind": "pdf"
+                },
+                {
+                  "id": "menningarstefna",
+                  "label": "Menningarstefna",
+                  "href": "https://www.reykjanesbaer.is/static/files/Stjornsyslusvid/Menning/menningarstefna_2020_2025.pdf",
+                  "kind": "pdf"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "dalkur-menntamal",
+          "cards": [
+            {
+              "id": "menntamal",
+              "title": "Menntamál",
+              "colorToken": "primary",
+              "items": [
+                {
+                  "id": "laesistefna",
+                  "label": "Læsistefna",
+                  "href": "https://www.reykjanesbaer.is/static/files/pdf_skjol_allir/rnb-laesisstefna-2017.pdf",
+                  "kind": "pdf"
+                },
+                {
+                  "id": "menntastefna",
+                  "label": "Menntastefna",
+                  "href": "https://www.reykjanesbaer.is/is/stjornsysla/stefnumotun/stefnur-og-samthykktir/menntastefna-reykjanesbaejar-2021-2030",
+                  "kind": "page"
+                },
+                {
+                  "id": "tomstundastefna",
+                  "label": "Tómstundastefna",
+                  "href": "https://www.reykjanesbaer.is/static/files/Fraedslusvid/tomstundastefna.pdf",
+                  "kind": "pdf"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "dalkur-umhverfismal",
+          "cards": [
+            {
+              "id": "umhverfismal",
+              "title": "Umhverfismál",
+              "colorToken": "primary",
+              "items": [
+                {
+                  "id": "umhverfis-og-loftlagsstefna",
+                  "label": "Umhverfis- og loftlagsstefna",
+                  "href": "https://www.reykjanesbaer.is/static/files/pdf_skjol_allir/2021/Juni/umhverfis_og_loftslagsstefna_reykjanesbaejar_2021.pdf",
+                  "kind": "pdf"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "dalkur-velferdarmal",
+          "cards": [
+            {
+              "id": "velferdarmal",
+              "title": "Velferðarmál",
+              "colorToken": "primary",
+              "items": [
+                {
+                  "id": "lydheilsustefna",
+                  "label": "Lýðheilsustefna",
+                  "href": "https://www.reykjanesbaer.is/static/files/pdf_skjol_allir/2021/Juni/lydheilsustefan_2021.pdf",
+                  "kind": "pdf"
+                },
+                {
+                  "id": "stefna-i-malefnum-eldri-borgara",
+                  "label": "Stefna í málefnum eldri borgara",
+                  "href": "https://www.reykjanesbaer.is/static/files/pdf_skjol_allir/stefna-i-malefnum-eldri-borgara.pdf",
+                  "kind": "pdf"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
