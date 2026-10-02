@@ -14,15 +14,31 @@
   * { box-sizing: border-box; }
   /* Reserve the widget's box before the module upgrades the element, so the
      content below it does not jump. Released again once it has rendered. */
-  stefnu-rit:not([data-ready]) { display: block; aspect-ratio: 1850 / 980; }
+  stefnu-rit:not([data-ready]) { display: block; min-height: 56rem; }
+  @media (max-width: 1399px) {
+    /* The layout stacks below this width, and gets taller. */
+    stefnu-rit:not([data-ready]) { min-height: 82rem; }
+  }
   body { margin: 0; background: var(--bg); color: var(--ink);
          font: 400 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
   .layout { display: grid; grid-template-columns: minmax(0,1fr) 420px; min-height: 100vh; }
   @media (max-width: 1100px) { .layout { grid-template-columns: 1fr; } }
 
-  .preview { padding: 20px; min-width: 0; }
-  .preview h1 { font-size: 16px; margin: 0 0 12px; color: var(--muted); font-weight: 600; }
-  .stage { background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.12); overflow: hidden; }
+  /* The preview has to be wide enough to show the layout production will use,
+     so it keeps a fixed stage and scrolls sideways on a narrower screen rather
+     than quietly previewing the stacked fallback. */
+  .preview { padding: 20px; min-width: 0; overflow-x: auto; }
+  .preview h1 { font-size: 16px; margin: 0 0 12px; color: var(--muted); font-weight: 600;
+                display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .widths { display: flex; gap: 4px; }
+  .widths button { font-size: 12px; padding: 4px 10px; }
+  .widths button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .stage {
+    background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.12);
+    overflow: hidden; min-width: 1460px;
+  }
+  .stage[data-width="stacked"] { min-width: 0; max-width: 820px; }
+  .stage[data-width="phone"] { min-width: 0; max-width: 390px; }
 
   .panel { background: #fff; border-left: 1px solid var(--edge); display: flex; flex-direction: column;
            max-height: 100vh; position: sticky; top: 0; }
@@ -72,7 +88,14 @@
 <body>
 <div class="layout">
   <div class="preview">
-    <h1>Forskoðun — línur endurteiknast um leið og þú breytir</h1>
+    <h1>
+      Forskoðun — línur endurteiknast um leið og þú breytir
+      <span class="widths">
+        <button type="button" data-width="" aria-pressed="true">Breitt</button>
+        <button type="button" data-width="stacked" aria-pressed="false">Staflað</button>
+        <button type="button" data-width="phone" aria-pressed="false">Sími</button>
+      </span>
+    </h1>
     <div class="stage"><stefnu-rit id="widget"></stefnu-rit></div>
   </div>
 
@@ -614,6 +637,19 @@ document.getElementById('reset').addEventListener('click', () => {
   render();
   setStatus('Núllstillt á vistað skjal.', 'ok');
 });
+
+// ---- preview width ---------------------------------------------------------
+const stage = document.querySelector('.stage');
+for (const button of document.querySelectorAll('.widths button')) {
+  button.addEventListener('click', () => {
+    for (const other of document.querySelectorAll('.widths button')) {
+      other.setAttribute('aria-pressed', String(other === button));
+    }
+    const width = button.dataset.width;
+    if (width) stage.dataset.width = width;
+    else delete stage.dataset.width;
+  });
+}
 
 // ---- boot ------------------------------------------------------------------
 const response = await fetch(SOURCE);

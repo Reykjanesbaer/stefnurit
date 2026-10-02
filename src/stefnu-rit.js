@@ -14,7 +14,7 @@
  * No dependencies, no build step required, no framework.
  */
 
-import { TOKENS, THEMEABLE, REFERENCE_WIDTH, REFERENCE_HEIGHT, STACK_BELOW } from './tokens.js';
+import { TOKENS, THEMEABLE, STACK_BELOW } from './tokens.js';
 import { FIGTREE_FACES } from './assets/fonts.js';
 import { validate } from './validate.js';
 import { routeTree, routeRail } from './lines.js';
@@ -69,8 +69,14 @@ function installPlaceholderStyle(doc) {
   if (!doc || doc.getElementById('sr-placeholder-style')) return;
   const style = doc.createElement('style');
   style.id = 'sr-placeholder-style';
+  // Two numbers, because the widget has two layouts: a wide tree and a stacked
+  // list. A height holds steadier than an aspect ratio — the tree is 888px at
+  // 1440 and 939px at 1850, so any single ratio is badly wrong at one end.
   style.textContent = `stefnu-rit { display: block; }
-stefnu-rit:not([data-ready]) { aspect-ratio: ${REFERENCE_WIDTH} / ${REFERENCE_HEIGHT}; }`;
+stefnu-rit:not([data-ready]) { min-height: 56rem; }
+@media (max-width: ${STACK_BELOW - 1}px) {
+  stefnu-rit:not([data-ready]) { min-height: 82rem; }
+}`;
   doc.head.prepend(style);
 }
 
@@ -82,7 +88,6 @@ ${tokenBlock(TOKENS)}
   display: block;
   container-type: inline-size;
   contain: layout style;
-  --sr-u: calc(100cqw / ${REFERENCE_WIDTH});
   color-scheme: light;
 }
 :host([hidden]) { display: none; }
@@ -92,14 +97,14 @@ ${tokenBlock(TOKENS)}
 .root {
   position: relative;
   background: var(--sr-color-surface);
+  color: var(--sr-color-on-dark);
   font-family: var(--sr-font-family);
   -webkit-font-smoothing: antialiased;
-  padding-inline: calc(var(--sr-page-margin) * var(--sr-u));
-  padding-block: calc(var(--sr-root-top) * var(--sr-u)) calc(var(--sr-page-bottom) * var(--sr-u));
+  padding: var(--sr-page-padding-top) var(--sr-page-padding-inline) var(--sr-page-padding-bottom);
 }
 
-/* Connector layer. Sits under the content so a stroke can never cover a label,
-   and is purely decorative, so it is hidden from assistive technology. */
+/* Connector layer. Under the content, so a stroke can never cover a label, and
+   decorative, so it is hidden from assistive technology. */
 .lines {
   position: absolute;
   inset: 0;
@@ -111,182 +116,191 @@ ${tokenBlock(TOKENS)}
 }
 .lines line {
   stroke: var(--sr-line-color);
-  stroke-width: max(1px, calc(var(--sr-line-width) * var(--sr-u)));
+  stroke-width: var(--sr-line-width);
   stroke-linecap: butt;
 }
 
-.band { display: flex; justify-content: center; }
-.band--branch {
-  margin-top: calc(var(--sr-branch-top) * var(--sr-u));
-  gap: calc(var(--sr-branch-gap) * var(--sr-u));
-}
+/* ---- fills ---------------------------------------------------------------- */
 
-/* ---- boxes -------------------------------------------------------------- */
-
-.pill { background: var(--sr-box-fill); }
-.pill, .card, .item-link { color: var(--sr-color-on-dark); }
 .box--primary { --sr-box-fill: var(--sr-color-primary); }
 .box--accent  { --sr-box-fill: var(--sr-color-accent); }
 .box--pill    { --sr-box-fill: var(--sr-color-pill); }
 
+/* ---- the two pill bands --------------------------------------------------- */
+
+.band { display: flex; justify-content: center; flex-wrap: wrap; }
+.band--branch {
+  margin-top: var(--sr-branch-top);
+  gap: var(--sr-branch-gap);
+}
+
 .pill {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: calc(var(--sr-icon-gap) * var(--sr-u));
-  width: max-content;
+  min-width: var(--sr-pill-min-width);
   max-width: 100%;
-  min-width: calc(var(--sr-pill-width) * var(--sr-u));
-  min-height: calc(var(--sr-pill-height) * var(--sr-u));
-  padding-inline: calc(var(--sr-pill-padding-x) * var(--sr-u));
-  border-radius: calc(var(--sr-radius-pill) * var(--sr-u));
-  font-size: max(var(--sr-min-font-size), calc(var(--sr-heading-size) * var(--sr-u)));
+  padding: var(--sr-pill-padding-block) var(--sr-pill-padding-inline);
+  border-radius: var(--sr-radius);
+  background: var(--sr-box-fill);
+  color: var(--sr-color-on-dark);
+  font-size: var(--sr-font-size-pill);
   font-weight: var(--sr-font-weight-heading);
   line-height: var(--sr-line-height);
   text-align: center;
   text-decoration: none;
+  transition: background-color 120ms ease-out;
 }
-.band--branch .pill { min-height: calc(42 * var(--sr-u)); }
 
-/* ---- the column grid ---------------------------------------------------- */
+/* ---- the column grid ------------------------------------------------------ */
 
 .grid {
   display: grid;
   align-items: stretch;
-  margin-top: calc(var(--sr-grid-top) * var(--sr-u));
-  gap: calc(var(--sr-column-gap) * var(--sr-u));
+  margin-top: var(--sr-grid-top);
+  gap: var(--sr-column-gap);
 }
 
 .col {
   display: flex;
   flex-direction: column;
-  gap: calc(var(--sr-card-gap) * var(--sr-u));
+  gap: var(--sr-card-gap);
   min-width: 0;
 }
 
-/* A column made only of accent cards carries no separate backing, so it takes
-   the backing's own vertical band instead — which is what makes column 1 of
-   the 2025 design sit 9 reference px inside the blue columns. */
-.col--inset { padding-block: calc(var(--sr-backing-inset) * var(--sr-u)); }
+/* A column of accent cards needs no separate backing, so it takes the
+   backing's own vertical band — which is what sets column 1 slightly inside
+   the blue columns. */
+.col--inset { padding-block: var(--sr-backing-inset); }
 
 /* A column with backed cards gives up its right-hand strip to the backing. */
-.col--backed .card { margin-right: calc(var(--sr-backing-offset) * var(--sr-u)); }
+.col--backed .card { margin-right: var(--sr-backing-offset); }
 
 .card {
   position: relative;
   flex: 1 1 auto;
-  border-radius: calc(var(--sr-radius-card) * var(--sr-u));
-  padding: calc(var(--sr-card-padding-top) * var(--sr-u))
-           calc(var(--sr-card-padding-x) * var(--sr-u))
-           calc(var(--sr-card-padding-bottom) * var(--sr-u));
   min-width: 0;
+  padding: var(--sr-card-padding-block) var(--sr-card-padding-inline);
 }
 
-/* The card paints as three layers in DOM order — backing, face, content —
-   rather than with z-index. The host is a stacking context (contain: layout),
-   so a negative z-index child would be buried behind the white page background
-   instead of sitting between it and the card. */
+/* Three layers in DOM order — backing, face, content — rather than z-index.
+   The host is a stacking context (contain: layout), so a negative z-index child
+   would be buried behind the white page background instead of sitting between
+   it and the card. */
 .card-backing, .card-face {
   position: absolute;
-  border-radius: calc(var(--sr-radius-card) * var(--sr-u));
+  border-radius: var(--sr-radius);
 }
 .card-backing {
-  top: calc(var(--sr-backing-inset) * var(--sr-u));
-  bottom: calc(var(--sr-backing-inset) * var(--sr-u));
-  left: calc(var(--sr-backing-offset) * var(--sr-u));
-  right: calc(var(--sr-backing-offset) * -1 * var(--sr-u));
+  top: var(--sr-backing-inset);
+  bottom: var(--sr-backing-inset);
+  left: var(--sr-backing-offset);
+  right: calc(-1 * var(--sr-backing-offset));
   background: var(--sr-color-accent);
 }
 .card-face { inset: 0; background: var(--sr-box-fill); }
-.card-title, .items { position: relative; }
 
 .card-title {
-  margin: 0 0 calc(var(--sr-heading-gap) * var(--sr-u));
-  font-size: max(var(--sr-min-font-size), calc(var(--sr-heading-size) * var(--sr-u)));
+  position: relative;
+  margin: 0 0 var(--sr-title-gap);
+  font-size: var(--sr-font-size-title);
   font-weight: var(--sr-font-weight-heading);
   line-height: var(--sr-line-height);
+  text-wrap: balance;
 }
 
-.items { margin: 0; padding: 0; list-style: none; }
+.items {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sr-item-gap);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
 
-.item + .item { margin-top: calc((var(--sr-item-pitch) - var(--sr-item-size) * var(--sr-line-height)) * var(--sr-u)); }
-
+/* Padded out and pulled back by the same amount: a comfortable tap target on a
+   phone without the text leaving the card's measure. */
 .item-link {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: start;
-  column-gap: calc(var(--sr-bullet-gap) * var(--sr-u));
-  background: none;
-  border-radius: calc(4 * var(--sr-u));
+  column-gap: var(--sr-bullet-gap);
+  margin-inline: calc(-1 * var(--sr-item-padding));
+  padding: var(--sr-item-padding);
+  border-radius: 6px;
   color: inherit;
-  font-size: max(var(--sr-min-font-size), calc(var(--sr-item-size) * var(--sr-u)));
+  font-size: var(--sr-font-size-item);
   font-weight: var(--sr-font-weight-item);
   line-height: var(--sr-line-height);
   text-decoration: none;
-  transition: filter 120ms ease-out;
+  transition: background-color 120ms ease-out;
 }
-a.item-link:hover { filter: brightness(1.18); }
+a.item-link:hover { background: rgba(255, 255, 255, 0.16); }
+a.pill:hover { background: color-mix(in srgb, var(--sr-box-fill) 88%, white); }
 a.item-link:focus-visible,
 a.pill:focus-visible {
-  outline: max(2px, calc(3 * var(--sr-u))) solid var(--sr-color-focus);
-  outline-offset: max(2px, calc(3 * var(--sr-u)));
+  outline: 2px solid var(--sr-color-focus);
+  outline-offset: 2px;
 }
 .item-link[aria-disabled='true'] { cursor: default; opacity: 0.72; }
 
 .bullet {
-  width: calc(var(--sr-bullet-size) * var(--sr-u));
-  height: calc(var(--sr-bullet-size) * var(--sr-u));
-  min-width: 2px;
-  min-height: 2px;
-  margin-top: calc(var(--sr-item-size) * var(--sr-line-height) * 0.45 * var(--sr-u));
+  width: var(--sr-bullet-size);
+  height: var(--sr-bullet-size);
+  margin-top: calc((1em * var(--sr-line-height) - var(--sr-bullet-size)) / 2);
   border-radius: 50%;
   background: currentColor;
 }
 
+/* Icelandic compounds are long: "Upplýsingaöryggisstefna" is wider than a
+   narrow column. Hyphenation breaks them at real syllables where the browser
+   has patterns for the language; overflow-wrap is the fallback that keeps text
+   inside the card when it does not. */
+.label {
+  hyphens: auto;
+  overflow-wrap: break-word;
+}
+
 .icon {
   display: inline-block;
-  width: calc(var(--sr-icon-size) * var(--sr-u));
-  height: calc(var(--sr-icon-size) * var(--sr-u));
-  min-width: 9px;
-  min-height: 9px;
-  margin-left: calc(var(--sr-icon-gap) * var(--sr-u));
-  vertical-align: -0.08em;
+  width: var(--sr-icon-size);
+  height: var(--sr-icon-size);
+  vertical-align: -0.09em;
   flex: none;
 }
 
-/* ---- stacked layout ------------------------------------------------------ */
+/* ---- stacked layout -------------------------------------------------------- */
 
 @container (max-width: ${STACK_BELOW - 1}px) {
-  :host, .root { --sr-u: 1px; }
-  .root {
-    padding-inline: calc(var(--sr-stack-rail) * 1px) 16px;
-    padding-block: 20px 24px;
+  /* A single column across a 1200px embed would be mostly empty space, so the
+     stack keeps to a readable measure and centres itself, with the rail in its
+     own gutter. */
+  .content {
+    display: block;
+    max-width: var(--sr-stack-max-width);
+    margin-inline: auto;
+    padding-left: var(--sr-stack-rail);
   }
   .band, .grid { display: block; }
   .band--branch { margin-top: 0; }
   .pill {
+    display: flex;
     width: 100%;
-    margin-top: 12px;
+    min-width: 0;
+    margin-top: var(--sr-stack-gap);
     justify-content: flex-start;
     text-align: left;
-    min-height: 0;
-    padding-block: 12px;
   }
   .band--root .pill { margin-top: 0; }
-  .grid { margin-top: 12px; }
-  .col { gap: 12px; margin-top: 12px; }
+  .grid { margin-top: var(--sr-stack-gap); }
+  .col { gap: var(--sr-stack-gap); margin-top: var(--sr-stack-gap); }
   .col--inset { padding-block: 0; }
   .col--backed .card { margin-right: 0; }
-  .card { padding: 18px 20px 20px; border-radius: 10px; }
   .card-backing { display: none; }
-  .card-title { margin-bottom: 10px; font-size: 19px; }
-  .item + .item { margin-top: 10px; }
-  .item-link { column-gap: 10px; font-size: 16px; }
-  .bullet { width: 4px; height: 4px; margin-top: 8px; }
-  .icon { width: 14px; height: 14px; margin-top: 3px; }
 }
 
-/* ---- failure state ------------------------------------------------------- */
+/* ---- failure state ---------------------------------------------------------- */
 
 .fallback {
   padding: 16px 20px;
@@ -301,7 +315,7 @@ a.pill:focus-visible {
 .fallback code { font-size: 13px; }
 
 @media (prefers-reduced-motion: reduce) {
-  .item-link { transition: none; }
+  .item-link, .pill { transition: none; }
 }
 `;
 
@@ -310,6 +324,20 @@ const ICON = `<svg class="icon" viewBox="0 0 14 14" aria-hidden="true" focusable
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => (
   { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
 ));
+
+/**
+ * Label plus trailing icon, joined by a non-breaking space.
+ *
+ * Left to itself the icon is just another inline box, so a label that wraps
+ * strands it alone on the last line. A no-break space forbids a line break at
+ * exactly that point and nowhere else — so the icon always travels with the
+ * text, while a long word like "Upplýsingaöryggisstefna" can still break
+ * inside itself when the column is narrow. Wrapping both in `white-space:
+ * nowrap` would forbid that too, and the word would run out of the card.
+ */
+function labelWithIcon(label, icon) {
+  return `<span class="label">${esc(label)}&nbsp;${icon}</span>`;
+}
 
 export class StefnuRit extends HTMLElement {
   static observedAttributes = ['src', 'target', 'theme'];
@@ -357,7 +385,10 @@ export class StefnuRit extends HTMLElement {
     if (this.#shadow.childElementCount) return;
     this.#shadow.innerHTML =
       `<style>:host { display: block; }
-       .placeholder { aspect-ratio: ${REFERENCE_WIDTH} / ${REFERENCE_HEIGHT}; }</style>
+       .placeholder { min-height: 56rem; }
+       @container (max-width: ${STACK_BELOW - 1}px) {
+         .placeholder { min-height: 82rem; }
+       }</style>
        <div class="placeholder"></div>`;
   }
 
@@ -437,7 +468,7 @@ export class StefnuRit extends HTMLElement {
         </div>`;
       }
       return `<div class="grid" data-section="${esc(section.id)}"
-        style="grid-template-columns: ${section.columns.map((c) => `${Number(c.weight) > 0 ? Number(c.weight) : 1}fr`).join(' ')}">
+        style="grid-template-columns: repeat(${section.columns.length}, minmax(0, 1fr))">
         ${section.columns.map((column) => this.#column(column)).join('')}
       </div>`;
     }).join('');
@@ -482,13 +513,13 @@ export class StefnuRit extends HTMLElement {
     const external = /^https?:\/\//i.test(item.href);
     return `<a class="item-link" id="${esc(item.id)}" href="${esc(item.href)}"
        target="${esc(this.target)}" ${external ? 'rel="noopener noreferrer"' : ''}${note}>
-      <span class="bullet" aria-hidden="true"></span><span class="label">${esc(item.label)}${ICON}</span></a>`;
+      <span class="bullet" aria-hidden="true"></span>${labelWithIcon(item.label, ICON)}</a>`;
   }
 
   #pill(item) {
     const token = item.colorToken || 'pill';
     const linked = typeof item.href === 'string' && item.href !== '' && item.kind !== 'none';
-    const inner = `${esc(item.label)}${linked ? ICON : ''}`;
+    const inner = linked ? labelWithIcon(item.label, ICON) : `<span class="label">${esc(item.label)}</span>`;
     if (!linked) {
       return `<span class="pill box--${token}" id="${esc(item.id)}" aria-disabled="true">${inner}</span>`;
     }
@@ -529,21 +560,37 @@ export class StefnuRit extends HTMLElement {
     let segments;
 
     if (stacked) {
+      // The stack is centred, so the rail is placed from the content box rather
+      // than from the page edge: half-way into the gutter the content reserves.
+      const content = this.#shadow.querySelector('.content');
+      const box = rect(content);
+      const gutter = parseFloat(getComputedStyle(content).paddingLeft || '32');
+      const railX = box.x + gutter / 2;
       const nodes = [rootPill, ...branchPills, ...cards].filter(Boolean).map(rect);
-      ({ segments } = routeRail({ railX: 16, cards: nodes }));
+      ({ segments } = routeRail({ railX, cards: nodes }));
     } else {
-      const unit = origin.width / REFERENCE_WIDTH;
       const columnRects = columns.map(rect);
       const branchRects = branchPills.map(rect);
-      const branchBottom = branchRects.length
+
+      const pillsBottom = branchRects.length
         ? Math.max(...branchRects.map((r) => r.y + r.height))
-        : rootPill ? rect(rootPill).y + rect(rootPill).height : 0;
+        : rootPill
+          ? rect(rootPill).y + rect(rootPill).height
+          : 0;
+      const gridTop = columnRects.length
+        ? Math.min(...columnRects.map((r) => r.y))
+        : pillsBottom;
+
+      // The rail lives in the white space between the pills and the cards,
+      // sitting nearer the pills. Deriving it from the laid-out boxes keeps it
+      // correct at any width without a measurement to maintain.
+      const railY = pillsBottom + (gridTop - pillsBottom) * 0.45;
 
       ({ segments } = routeTree({
         root: rootPill ? rect(rootPill) : null,
         branch: branchRects,
         columns: columnRects,
-        railY: branchBottom + Number(TOKENS['rail-offset']) * unit,
+        railY,
       }));
     }
 

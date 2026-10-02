@@ -9,7 +9,11 @@
   :root { color-scheme: light; }
   /* Reserve the widget's box before the module upgrades the element, so the
      content below it does not jump. Released again once it has rendered. */
-  stefnu-rit:not([data-ready]) { display: block; aspect-ratio: 1850 / 980; }
+  stefnu-rit:not([data-ready]) { display: block; min-height: 56rem; }
+  @media (max-width: 1399px) {
+    /* The layout stacks below this width, and gets taller. */
+    stefnu-rit:not([data-ready]) { min-height: 82rem; }
+  }
   body {
     margin: 0;
     background: #F4F6F8;

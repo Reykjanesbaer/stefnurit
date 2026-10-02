@@ -1,5 +1,15 @@
 # Stefnurit 2025 — design inventory
 
+> **Status: provenance, not specification.** This is the record of what was in
+> the Canva file — its structure, its exact colours, its text, its links, and
+> the seven defects found in it. That is still the source of the content and of
+> the palette, and §6.3 is still the list of things worth deciding.
+>
+> It is no longer the design brief. The layout is the project's own now; where
+> the two differ, `src/tokens.js` and `docs/qa/` are authoritative. The
+> measurements below describe the Canva page, not the rendered widget.
+
+
 Reverse-engineered from the Canva design `DAG5D8uf0OE` ("Stefnurit 2025").
 
 **Reference page size: 1850 × 980 px** (Canva "custom" page, 1 page).

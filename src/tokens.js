@@ -1,74 +1,88 @@
 /**
- * Design tokens, measured from the Canva reference (see docs/design-inventory.md).
+ * Design tokens.
  *
- * Lengths are expressed in *reference pixels* — the units of the 1850 × 980
- * Canva page — and converted to CSS by multiplying with `--sr-u`, which is one
- * reference pixel's worth of the widget's current width. That is why the
- * widget keeps the design's proportions at any size without a single
- * breakpoint-specific number: change the container width and every rectangle,
- * gap, radius, line and type size moves together.
+ * These started life as measurements taken off the Canva export, scaled from a
+ * fixed 1850 × 980 page. That bought a pixel match and cost legibility: every
+ * length, including type, shrank in proportion to the widget, so body text hit
+ * its 12 px floor well before a tablet.
+ *
+ * Now that the design is ours rather than a reproduction, the proportions are
+ * kept but the units are real. Type is fluid between a readable minimum and the
+ * size the original used at full width, and everything else is on a plain rem
+ * scale. `cqw` rather than `vw` throughout, so a widget in a narrow CMS column
+ * sizes itself to that column and not to the window behind it.
  */
-export const REFERENCE_WIDTH = 1850;
-export const REFERENCE_HEIGHT = 980;
 
-/** Width below which the tree layout is abandoned for a stacked rail. */
-export const STACK_BELOW = 720;
+/**
+ * Below this width the column tree gives way to a stacked rail.
+ *
+ * Set by the content, not by a device: "Upplýsingaöryggisstefna" needs about
+ * 260 px to sit on one line at the body size, and five of those plus gaps and
+ * page padding comes to roughly 1400. Chromium ships no Icelandic hyphenation
+ * patterns, so a narrower column has to break compounds mid-syllable, which
+ * reads far worse than stacking.
+ */
+export const STACK_BELOW = 1400;
 
 export const TOKENS = {
-  // ---- colour (exact, colour-picked from the reference render) -------------
+  // ---- colour (from the original, colour-picked; see docs/design-inventory.md)
   'color-surface': '#FFFFFF',
   'color-primary': '#1F559F',
   'color-accent': '#009EBF',
   'color-pill': '#2562AE',
   'color-on-dark': '#FFFFFF',
   'color-focus': '#FFFFFF',
-  'line-color': '#CACACA',
-
-  // ---- geometry, in reference px ------------------------------------------
-  'line-width': '2',
-  'radius-card': '9',
-  'radius-pill': '8',
-
-  'page-margin': '106',
-  'page-bottom': '101',
-  'root-top': '33',
-  'pill-height': '46',
-  'pill-width': '310',
-  'pill-padding-x': '26',
-  'branch-gap': '284',
-  'branch-top': '31',
-  'rail-offset': '21',
-  'grid-top': '48',
-
-  'column-gap': '0',
-  'card-gap': '33',
-  'card-padding-x': '40',
-  'card-padding-top': '18',
-  'card-padding-bottom': '9',
-  'backing-offset': '21',
-  'backing-inset': '9',
-
-  'heading-size': '22',
-  'heading-gap': '15',
-  'item-size': '18',
-  'item-pitch': '41.05',
-  'bullet-size': '4',
-  'bullet-gap': '14',
-  'icon-size': '14',
-  'icon-gap': '7',
+  'line-color': '#C6CDD6',
 
   // ---- type ----------------------------------------------------------------
   'font-family': "'Figtree', 'Figtree Fallback', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+  // 15px at phone width, 18px at the original's full width — never below 15.
+  'font-size-item': 'clamp(0.9375rem, 0.84rem + 0.26cqw, 1.125rem)',
+  'font-size-title': 'clamp(1.0625rem, 0.95rem + 0.30cqw, 1.375rem)',
+  'font-size-pill': 'clamp(1rem, 0.90rem + 0.28cqw, 1.25rem)',
   'font-weight-heading': '700',
   'font-weight-item': '400',
-  'line-height': '1.32',
+  'line-height': '1.4',
 
-  // ---- minimum legible text, overriding pure scaling ----------------------
-  'min-font-size': '12px',
+  // ---- geometry ------------------------------------------------------------
+  'line-width': '2px',
+  'radius': '10px',
+
+  'page-padding-inline': 'clamp(1rem, 3cqw, 3.5rem)',
+  'page-padding-top': 'clamp(1rem, 2cqw, 2rem)',
+  'page-padding-bottom': 'clamp(1.5rem, 3cqw, 3.25rem)',
+
+  'branch-top': 'clamp(0.75rem, 1.6cqw, 1.75rem)',
+  'branch-gap': 'clamp(1.5rem, 15cqw, 17.5rem)',
+  'grid-top': 'clamp(1.75rem, 2.8cqw, 3rem)',
+
+  'pill-min-width': 'clamp(12rem, 17cqw, 19.5rem)',
+  'pill-padding-block': '0.55rem',
+  'pill-padding-inline': '1.25rem',
+
+  'column-gap': 'clamp(0.4rem, 0.9cqw, 1rem)',
+  'card-gap': 'clamp(1rem, 1.9cqw, 2.25rem)',
+  'card-padding-inline': 'clamp(0.9rem, 1.5cqw, 1.75rem)',
+  'card-padding-block': 'clamp(0.85rem, 1.2cqw, 1.35rem)',
+  'title-gap': '0.7rem',
+
+  // The accent rectangle that shows down a card's right-hand edge.
+  'backing-offset': 'clamp(8px, 1.1cqw, 20px)',
+  'backing-inset': 'clamp(5px, 0.5cqw, 9px)',
+
+  'item-gap': '0.55rem',
+  'item-padding': '0.14rem',
+  'bullet-size': '0.28em',
+  'bullet-gap': '0.75em',
+  'icon-size': '0.92em',
+  'icon-gap': '0.38em',
 
   // ---- stacked layout ------------------------------------------------------
-  'stack-rail': '34',
+  'stack-rail': '2.1rem',
+  // Keeps the stacked list to a comfortable measure instead of one wide sprawl.
+  'stack-max-width': '46rem',
+  'stack-gap': '0.75rem',
 };
 
-/** Token names a `theme` block in the JSON (or a page) may override. */
+/** Token names a `theme` block in the JSON, or the page, may override. */
 export const THEMEABLE = Object.keys(TOKENS);

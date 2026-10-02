@@ -8,7 +8,11 @@
 <style>
   body { margin: 0; padding: 20px; font: 400 15px/1.5 system-ui, sans-serif; background: #fff; }
   h2 { font-size: 14px; color: #5A616B; margin: 24px 0 8px; }
-  stefnu-rit:not([data-ready]) { display: block; aspect-ratio: 1850 / 980; }
+  stefnu-rit:not([data-ready]) { display: block; min-height: 56rem; }
+  @media (max-width: 1399px) {
+    /* The layout stacks below this width, and gets taller. */
+    stefnu-rit:not([data-ready]) { min-height: 82rem; }
+  }
 </style>
 </head>
 <body>

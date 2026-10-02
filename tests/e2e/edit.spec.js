@@ -48,7 +48,9 @@ function expectConsistent(g) {
 
 test.describe('edit mode', () => {
   test.beforeEach(async ({ page }) => {
-    await page.setViewportSize({ width: 1500, height: 1000 });
+    // Wide enough that the editor's fixed-width stage shows the column tree
+    // rather than scrolling, which is what these assertions are about.
+    await page.setViewportSize({ width: 1980, height: 1100 });
     await page.goto('/demo/edit.html');
     // Clear once, then reload — an initScript would wipe the draft on every
     // navigation, including the reload the draft test depends on.

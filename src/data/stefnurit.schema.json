@@ -138,12 +138,6 @@
             "$ref": "#/definitions/card"
           },
           "description": "One or more stacked cards. Column 1 of the 2025 design has two."
-        },
-        "weight": {
-          "type": "number",
-          "exclusiveMinimum": 0,
-          "default": 1,
-          "description": "Relative width of this column in the grid. 1 is a normal column; column 1 of the 2025 design measures 1.045 because the designer widened it for its longer labels."
         }
       }
     },
