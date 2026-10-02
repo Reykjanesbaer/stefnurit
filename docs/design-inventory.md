@@ -317,56 +317,59 @@ until you say otherwise.
 
 ---
 
-## 7. Doubts — I need answers before building
+## 7. Decisions taken
 
-**Q1 · The teal sliver (§1.3).** Is the teal strip down the right edge of the
-blue cards *meant to be there*, or is it a Canva layering leftover? Three ways
-to go:
-  a. **Reproduce it** — pixel-faithful, and acceptance criterion 1 is met
-     literally. Costs a decorative element in the data model.
-  b. **Drop it** — cleaner, columns 2–5 become plain blue cards. Visibly
-     different from the Canva original along five edges.
-  c. **Promote it** — keep a deliberate 18 px teal accent on every card
-     including column 1's, as a design feature.
-  My recommendation: **(a)** for the first build, so we can diff against the
-  original honestly, with a `theme` flag to switch it off.
+The inventory originally ended with seven open questions. All were answered with
+"pick the best option and stay as close to the design as possible". Here is what
+was chosen and why, so the reasoning survives the conversation.
 
-**Q2 · Why is column 1 teal?** Is *Stjórnsýsla / Mannauðsmál* teal because it is
-the administrative column (meaning: a category colour), or because it is first
-(meaning: an alternating pattern)? This decides what happens when you add a
-sixth column in edit mode. The `colorToken` field handles either, but the
-default matters.
+**Q1 · The teal strip (§1.3) — reproduced, per card.**
+Each card gets its own accent rectangle, offset 21 px right and inset 9 px top
+and bottom. That reproduces the strip in every column and the vertical band
+column 1 sits in, from one rule rather than a special case. What it does *not*
+reproduce is the white notch at y 616–650 in columns 2–5's strips, which in the
+design is the leftover outline of column 1 showing through. Four patches of
+roughly 21 × 34 px; recorded in `docs/qa/report.md`.
 
-**Q3 · Font.** I cannot identify the Canva font from a ⅓-scale render. Can you
-open the design in Canva and tell me the family name from the text toolbar? If
-it is a Canva-only font I will substitute Figtree and say so.
+**Q2 · Column 1's teal — a property of the card, not its position.**
+`colorToken` is per card, so a sixth column looks like whichever token it is
+given. A card already filled with the accent colour takes the backing's own
+vertical band instead of drawing a second one, which is what makes column 1 sit
+9 px inside the blue columns.
 
-**Q4 · Teal contrast.** White on `#009EBF` is **3.1:1** — below AA for body
-text. 12 of the 21 links are on teal. Acceptance criterion 6 asks for no serious
-axe issues, so these two pull against each other. Options: darken the teal
-token to ~`#007E99` (4.5:1, a visible but small shift), keep the colour and
-accept the axe finding, or keep it and raise the teal text to 600 weight +
-19 px so it qualifies as large text. **Recommendation: darken to `#007E99`** —
-at normal zoom it is hard to tell from the original and it clears AA.
+**Q3 · Font — Figtree, self-hosted.**
+The Canva original could not be identified from a ⅓-scale render. Figtree is the
+closest freely-hostable match and covers the Icelandic alphabet in its *latin*
+subset alone. Both subsets are vendored as woff2 and inlined into the bundle:
+~40 kB, in exchange for no external request and no font path to get wrong in a
+CMS. A metric-matched fallback holds the layout until it swaps in.
 
-**Q5 · Line weight and radii.** Measured at ⅓ scale, the connectors are 2–4 px
-and the radii 8–9 px at reference width. I can only pin these to ±3 px without
-the full-size export. If precision matters for criterion 1, please commit
-`docs/reference/stefnurit-2025.png` at ×2 or a PDF export (see
-`docs/reference/README.md`).
+**Q4 · Teal contrast — design colour kept, AA theme one line away.**
+`#009EBF` ships as-is, because matching the design was the brief.
+`{"theme": {"color-accent": "#007E99"}}` clears AA. The e2e suite asserts both:
+that the teal contrast is the *only* serious axe finding as shipped, and that the
+override removes it entirely. Flagged in the README as a decision worth making
+deliberately, since this is a municipal site.
 
-**Q6 · Tick gap.** The drop ticks appear to stop ~8–12 px above the card tops.
-Deliberate gap or antialiasing? Will assume **they touch the cards** unless the
-full-res export says otherwise.
+**Q5 · Line weight and radii — measured values, honestly bounded.**
+`line-width: 2`, `radius-card: 9`, `radius-pill: 8` reference px. These cannot be
+pinned tighter than ±3 design px against a ⅓-scale reference; `npm run qa` says
+so in its own report rather than implying a precision that is not there.
 
-**Q7 · Title.** The Canva page has **no visible title text** — "Stefnurit 2025"
-is the Canva document name only. Should `<stefnu-rit>` render a heading, or stay
-headless and let the CMS page supply the `<h1>`? Recommendation: **headless**,
-with the title carried in the JSON for `aria-label` only.
+**Q6 · Tick gap — the ticks touch the cards.**
+Asserted by an e2e test: every tick's lower end is within 1 px of its column's
+top edge, at every width.
 
----
+**Q7 · Title — headless.**
+No visible heading; `title` becomes the `aria-label` of the `<nav>`, leaving the
+page's own `<h1>` to do its job.
 
-## 8. Proposed file tree
+**And one structural change.** The brief's `sections → rows → items` became
+`sections → columns → cards → items`, because that is what the design is: five
+columns, the first holding two stacked cards. Adding a column or a card stays a
+pure data edit.
+
+## 8. File tree
 
 ```
 src/
@@ -403,18 +406,13 @@ README.md
 
 ---
 
-## 9. What the data model has to carry
+## 9. The data model this produced
 
-Falling out of §1 and §6, the brief's schema needs one adjustment: the design
-has **columns that contain one or two cards**, not *sections containing rows of
-items*. Mapping:
+- `sections[]` — the three bands: `root`, `branch`, `columns`.
+- Inside the `columns` section, `columns[]` → `cards[]` → `items[]`.
+- A column may carry an optional `weight`; column 1 measures 1.045 because the
+  designer widened it for its longer labels.
 
-- `sections[]` → the three bands: `root`, `level2`, `malaflokkar`.
-- Within `malaflokkar`, `rows[]` → **columns**, each with a `cards[]` of one or
-  two cards, each card having `title` + `items[]`.
-
-That keeps "add a column" and "add a card to a column" as pure data edits, which
-is what acceptance criteria 3 and 4 require. If you would rather I keep the
-brief's exact `sections → rows → items` naming and model column 1's second card
-as a second row, say so — it is the same renderer either way, just different key
-names in the JSON you will be editing by hand.
+See `src/data/stefnurit.schema.json` for the contract and `src/validate.js` for
+the runtime checks, which add the one rule JSON Schema cannot express: ids must
+be unique across the whole document.

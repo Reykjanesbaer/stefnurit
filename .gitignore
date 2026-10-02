@@ -3,5 +3,3 @@ dist/
 .vite/
 test-results/
 playwright-report/
-docs/qa/*.png
-!docs/qa/.gitkeep

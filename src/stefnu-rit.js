@@ -278,7 +278,7 @@ a.pill:focus-visible {
   .col--inset { padding-block: 0; }
   .col--backed .card { margin-right: 0; }
   .card { padding: 18px 20px 20px; border-radius: 10px; }
-  .card--backed::before { display: none; }
+  .card-backing { display: none; }
   .card-title { margin-bottom: 10px; font-size: 19px; }
   .item + .item { margin-top: 10px; }
   .item-link { column-gap: 10px; font-size: 16px; }

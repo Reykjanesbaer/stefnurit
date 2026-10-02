@@ -1,0 +1,21 @@
+name: Check the document links
+
+# The PDFs behind these links move when the website is reorganised, and nobody
+# finds out until a resident clicks one. Weekly is often enough to catch it
+# before they do.
+on:
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+  pull_request:
+    paths: ['src/data/stefnurit.json']
+
+jobs:
+  links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/check-links.mjs
