@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="is">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stefnurit — ritstjórn</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%23009EBF'/%3E%3C/svg%3E">
+<style>
+  :root {
+    color-scheme: light;
+    --ink: #1B1B1F; --muted: #5A616B; --edge: #D3D8DF; --bg: #F4F6F8;
+    --accent: #1F559F; --danger: #B3261E; --warn: #8A5A00;
+  }
+  * { box-sizing: border-box; }
+  /* Reserve the widget's box before the module upgrades the element, so the
+     content below it does not jump. Released again once it has rendered. */
+  stefnu-rit:not([data-ready]) { display: block; min-height: 56rem; }
+  @media (max-width: 1399px) {
+    /* The layout stacks below this width, and gets taller. */
+    stefnu-rit:not([data-ready]) { min-height: 82rem; }
+  }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 400 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .layout { display: grid; grid-template-columns: minmax(0,1fr) 420px; min-height: 100vh; }
+  @media (max-width: 1100px) { .layout { grid-template-columns: 1fr; } }
+
+  /* The preview has to be wide enough to show the layout production will use,
+     so it keeps a fixed stage and scrolls sideways on a narrower screen rather
+     than quietly previewing the stacked fallback. */
+  .preview { padding: 20px; min-width: 0; overflow-x: auto; }
+  .preview h1 { font-size: 16px; margin: 0 0 12px; color: var(--muted); font-weight: 600;
+                display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .widths { display: flex; gap: 4px; }
+  .widths button { font-size: 12px; padding: 4px 10px; }
+  .widths button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .stage {
+    background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.12);
+    overflow: hidden; min-width: 1460px;
+  }
+  .stage[data-width="stacked"] { min-width: 0; max-width: 820px; }
+  .stage[data-width="phone"] { min-width: 0; max-width: 390px; }
+
+  .panel { background: #fff; border-left: 1px solid var(--edge); display: flex; flex-direction: column;
+           max-height: 100vh; position: sticky; top: 0; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px; border-bottom: 1px solid var(--edge); }
+  .scroll { overflow-y: auto; flex: 1; }
+  h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted);
+       margin: 16px 12px 6px; }
+
+  button { font: inherit; font-size: 13px; padding: 6px 10px; border: 1px solid var(--edge);
+           background: #fff; border-radius: 6px; cursor: pointer; color: inherit; }
+  button:hover { background: #F0F3F7; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.danger { color: var(--danger); border-color: #E6C3C0; }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+  button.icon { padding: 3px 7px; font-size: 12px; line-height: 1.4; }
+
+  .tree { padding: 0 8px 12px; }
+  .row { display: flex; align-items: center; gap: 4px; padding: 3px 6px; border-radius: 6px; }
+  .row:hover { background: #F2F5F9; }
+  .row[aria-selected="true"] { background: #E3ECF8; outline: 2px solid var(--accent); outline-offset: -2px; }
+  .row .grip { cursor: grab; color: #9AA2AD; padding: 0 2px; user-select: none; }
+  .row .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+               background: none; border: 0; text-align: left; padding: 2px 0; }
+  .row .tools { display: flex; gap: 2px; opacity: 0; }
+  .row:hover .tools, .row:focus-within .tools { opacity: 1; }
+  .row.drop-before { box-shadow: inset 0 2px 0 var(--accent); }
+  .row.drop-after { box-shadow: inset 0 -2px 0 var(--accent); }
+  .depth-col { margin-left: 10px; } .depth-card { margin-left: 22px; } .depth-item { margin-left: 34px; }
+  .swatch { width: 10px; height: 10px; border-radius: 2px; flex: none; }
+  .badge { font-size: 11px; color: var(--muted); }
+
+  .inspector { border-top: 1px solid var(--edge); padding: 12px; background: #FAFBFC; }
+  .field { margin-bottom: 10px; }
+  label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 3px; }
+  input[type=text], input[type=url], select, textarea {
+    width: 100%; font: inherit; font-size: 14px; padding: 6px 8px;
+    border: 1px solid var(--edge); border-radius: 6px; background: #fff; }
+  textarea { min-height: 90px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+  .hint { font-size: 12px; margin-top: 3px; }
+  .hint.bad { color: var(--danger); } .hint.warn { color: var(--warn); } .hint.ok { color: #14662B; }
+  .status { padding: 8px 12px; font-size: 12px; border-top: 1px solid var(--edge); color: var(--muted); }
+  .status strong { color: var(--ink); }
+  dialog { border: 1px solid var(--edge); border-radius: 10px; padding: 16px; max-width: 560px; width: 92vw; }
+  dialog::backdrop { background: rgba(0,0,0,.35); }
+</style>
+</head>
+<body>
+<div class="layout">
+  <div class="preview">
+    <h1>
+      Forskoðun — línur endurteiknast um leið og þú breytir
+      <span class="widths">
+        <button type="button" data-width="" aria-pressed="true">Breitt</button>
+        <button type="button" data-width="stacked" aria-pressed="false">Staflað</button>
+        <button type="button" data-width="phone" aria-pressed="false">Sími</button>
+      </span>
+    </h1>
+    <div class="stage"><stefnu-rit id="widget"></stefnu-rit></div>
+  </div>
+
+  <aside class="panel">
+    <div class="toolbar">
+      <button type="button" class="primary" id="download">Sækja JSON</button>
+      <button type="button" id="copy">Afrita JSON</button>
+      <button type="button" id="import">Flytja inn…</button>
+      <button type="button" id="reset">Núllstilla</button>
+    </div>
+
+    <div class="scroll">
+      <h2>Efnistré</h2>
+      <div class="tree" id="tree"></div>
+    </div>
+
+    <div class="inspector" id="inspector"></div>
+    <p class="status" id="status"></p>
+  </aside>
+</div>
+
+<dialog id="import-dialog">
+  <form method="dialog">
+    <h3 style="margin:0 0 8px">Flytja inn JSON</h3>
+    <p style="margin:0 0 8px;font-size:13px;color:#5A616B">Límdu innihald <code>stefnurit.json</code> hér.</p>
+    <textarea id="import-text" spellcheck="false"></textarea>
+    <p class="hint" id="import-hint"></p>
+    <menu style="display:flex;gap:6px;justify-content:flex-end;padding:0;margin:10px 0 0">
+      <button value="cancel">Hætta við</button>
+      <button value="ok" class="primary" id="import-ok">Flytja inn</button>
+    </menu>
+  </form>
+</dialog>
+
+<script type="module">
+import '../src/stefnu-rit.js';
+import { formatJson } from '../src/format.js';
+import { validate } from '../src/validate.js';
+
+const SOURCE = '../src/data/stefnurit.json';
+const DRAFT_KEY = 'stefnurit-draft-v1';
+const COLORS = { primary: '#1F559F', accent: '#009EBF', pill: '#2562AE' };
+
+const widget = document.getElementById('widget');
+const treeEl = document.getElementById('tree');
+const inspectorEl = document.getElementById('inspector');
+const statusEl = document.getElementById('status');
+
+let saved = null;      // what the server last gave us
+let doc = null;        // what we are editing
+let selected = null;   // path array of the selected node
+
+// ---- draft persistence, entirely optional ---------------------------------
+// Private browsing, blocked site data and quota errors all throw here, and none
+// of them should take the editor down with them.
+const draft = {
+  read() { try { const v = localStorage.getItem(DRAFT_KEY); return v ? JSON.parse(v) : null; } catch { return null; } },
+  write(value) { try { localStorage.setItem(DRAFT_KEY, formatJson(value)); } catch { /* ignore */ } },
+  clear() { try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ } },
+};
+
+// ---- path helpers ----------------------------------------------------------
+const at = (path) => path.reduce((node, key) => node?.[key], doc);
+const parentList = (path) => at(path.slice(0, -1));
+const indexOf = (path) => path.at(-1);
+const samePath = (a, b) => a && b && a.length === b.length && a.every((v, i) => v === b[i]);
+
+function kindOf(path) {
+  const key = path.at(-2);
+  return { items: 'item', cards: 'card', columns: 'column', sections: 'section' }[key] ?? 'node';
+}
+
+// ---- mutations -------------------------------------------------------------
+function uniqueId(base) {
+  const taken = new Set();
+  const walk = (node) => {
+    if (Array.isArray(node)) return node.forEach(walk);
+    if (node && typeof node === 'object') {
+      if (typeof node.id === 'string') taken.add(node.id);
+      Object.values(node).forEach(walk);
+    }
+  };
+  walk(doc);
+  const slug = (base || 'nytt').toLowerCase().normalize('NFD')
+    .replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '') || 'nytt';
+  if (!taken.has(slug)) return slug;
+  let n = 2;
+  while (taken.has(`${slug}-${n}`)) n += 1;
+  return `${slug}-${n}`;
+}
+
+function freshIds(node) {
+  const clone = structuredClone(node);
+  const walk = (n) => {
+    if (Array.isArray(n)) return n.forEach(walk);
+    if (n && typeof n === 'object') {
+      if (typeof n.id === 'string') n.id = uniqueId(n.id);
+      Object.values(n).forEach(walk);
+    }
+  };
+  walk(clone);
+  return clone;
+}
+
+function move(path, delta) {
+  const list = parentList(path);
+  const from = indexOf(path);
+  const to = from + delta;
+  if (to < 0 || to >= list.length) return;
+  list.splice(to, 0, list.splice(from, 1)[0]);
+  selected = [...path.slice(0, -1), to];
+  commit();
+}
+
+function reorder(path, targetIndex) {
+  const list = parentList(path);
+  const from = indexOf(path);
+  if (from === targetIndex || from + 1 === targetIndex) return;
+  const [moved] = list.splice(from, 1);
+  const to = targetIndex > from ? targetIndex - 1 : targetIndex;
+  list.splice(to, 0, moved);
+  selected = [...path.slice(0, -1), to];
+  commit();
+}
+
+function remove(path) {
+  const list = parentList(path);
+  if (list.length <= 1 && kindOf(path) !== 'item') {
+    setStatus('Ekki hægt að eyða síðasta atriðinu á þessu stigi.', 'bad');
+    return;
+  }
+  list.splice(indexOf(path), 1);
+  selected = null;
+  commit();
+}
+
+function duplicate(path) {
+  const list = parentList(path);
+  const copy = freshIds(at(path));
+  if ('label' in copy) copy.label += ' (afrit)';
+  if ('title' in copy) copy.title += ' (afrit)';
+  list.splice(indexOf(path) + 1, 0, copy);
+  selected = [...path.slice(0, -1), indexOf(path) + 1];
+  commit();
+}
+
+function addItem(cardPath) {
+  const card = at(cardPath);
+  card.items.push({ id: uniqueId('nytt-skjal'), label: 'Nýtt skjal', href: '', kind: 'pdf' });
+  selected = [...cardPath, 'items', card.items.length - 1];
+  commit();
+}
+
+function addCard(columnPath) {
+  const column = at(columnPath);
+  column.cards.push({ id: uniqueId('nytt-kort'), title: 'Nýr flokkur', colorToken: 'primary', items: [] });
+  selected = [...columnPath, 'cards', column.cards.length - 1];
+  commit();
+}
+
+function addColumn(sectionPath) {
+  const section = at(sectionPath);
+  const id = uniqueId('nyr-dalkur');
+  section.columns.push({
+    id,
+    cards: [{ id: uniqueId('nytt-kort'), title: 'Nýr flokkur', colorToken: 'primary', items: [] }],
+  });
+  selected = [...sectionPath, 'columns', section.columns.length - 1];
+  commit();
+}
+
+// ---- rendering -------------------------------------------------------------
+function commit() {
+  draft.write(doc);
+  render();
+}
+
+/**
+ * Typing path: refresh everything except the inspector, which holds the field
+ * the caret is in. Rebuilding that would drop focus on every keystroke.
+ */
+function live() {
+  draft.write(doc);
+  widget.config = structuredClone(doc);
+  renderTree();
+  renderStatus();
+}
+
+function render() {
+  widget.config = structuredClone(doc);
+  renderTree();
+  renderInspector();
+  renderStatus();
+}
+
+function row({ path, depth, name, color, badge, children }) {
+  const el = document.createElement('div');
+  el.className = `row depth-${depth}`;
+  el.dataset.path = JSON.stringify(path);
+  el.setAttribute('aria-selected', String(samePath(path, selected)));
+  el.draggable = true;
+
+  const grip = document.createElement('span');
+  grip.className = 'grip';
+  grip.textContent = '⠿';
+  grip.setAttribute('aria-hidden', 'true');
+  el.append(grip);
+
+  if (color) {
+    const swatch = document.createElement('span');
+    swatch.className = 'swatch';
+    swatch.style.background = color;
+    el.append(swatch);
+  }
+
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'name';
+  button.textContent = name;
+  button.addEventListener('click', () => { selected = path; render(); });
+  el.append(button);
+
+  if (badge) {
+    const span = document.createElement('span');
+    span.className = 'badge';
+    span.textContent = badge;
+    el.append(span);
+  }
+
+  const tools = document.createElement('div');
+  tools.className = 'tools';
+  const list = parentList(path);
+  const index = indexOf(path);
+  for (const [label, title, action, disabled] of [
+    ['↑', 'Færa upp', () => move(path, -1), index === 0],
+    ['↓', 'Færa niður', () => move(path, +1), index === list.length - 1],
+    ['⧉', 'Tvöfalda', () => duplicate(path), false],
+    ['✕', 'Eyða', () => remove(path), false],
+  ]) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'icon' + (label === '✕' ? ' danger' : '');
+    b.textContent = label;
+    b.title = title;
+    b.disabled = disabled;
+    b.addEventListener('click', action);
+    tools.append(b);
+  }
+  el.append(tools);
+
+  const wrap = document.createElement('div');
+  wrap.append(el);
+  if (children) wrap.append(children);
+  return wrap;
+}
+
+function renderTree() {
+  treeEl.replaceChildren();
+
+  doc.sections.forEach((section, si) => {
+    const sectionPath = ['sections', si];
+    const heading = document.createElement('h2');
+    heading.textContent = section.kind === 'columns' ? 'Málaflokkar' : section.kind === 'root' ? 'Rót' : 'Yfirstefnur';
+    heading.style.margin = '12px 4px 4px';
+    treeEl.append(heading);
+
+    if (section.kind !== 'columns') {
+      section.items.forEach((item, ii) => {
+        treeEl.append(row({
+          path: [...sectionPath, 'items', ii],
+          depth: 'col',
+          name: item.label,
+          color: COLORS[item.colorToken ?? 'pill'],
+          badge: item.href ? '' : 'enginn hlekkur',
+        }));
+      });
+      return;
+    }
+
+    section.columns.forEach((column, ci) => {
+      const columnPath = [...sectionPath, 'columns', ci];
+      const children = document.createElement('div');
+
+      column.cards.forEach((card, di) => {
+        const cardPath = [...columnPath, 'cards', di];
+        const items = document.createElement('div');
+        card.items.forEach((item, ii) => {
+          items.append(row({
+            path: [...cardPath, 'items', ii],
+            depth: 'item',
+            name: item.label,
+            badge: item.href ? '' : 'enginn hlekkur',
+          }));
+        });
+        const add = document.createElement('button');
+        add.type = 'button';
+        add.className = 'icon';
+        add.style.marginLeft = '34px';
+        add.textContent = '+ skjal';
+        add.addEventListener('click', () => addItem(cardPath));
+        items.append(add);
+
+        children.append(row({
+          path: cardPath,
+          depth: 'card',
+          name: card.title,
+          color: COLORS[card.colorToken ?? 'primary'],
+          children: items,
+        }));
+      });
+
+      const addCardButton = document.createElement('button');
+      addCardButton.type = 'button';
+      addCardButton.className = 'icon';
+      addCardButton.style.marginLeft = '22px';
+      addCardButton.textContent = '+ flokkur';
+      addCardButton.addEventListener('click', () => addCard(columnPath));
+      children.append(addCardButton);
+
+      treeEl.append(row({
+        path: columnPath,
+        depth: 'col',
+        name: `Dálkur ${ci + 1}`,
+        badge: `${column.cards.length} flokkar`,
+        children,
+      }));
+    });
+
+    const addColumnButton = document.createElement('button');
+    addColumnButton.type = 'button';
+    addColumnButton.textContent = '+ dálkur';
+    addColumnButton.style.margin = '6px 0 0 10px';
+    addColumnButton.addEventListener('click', () => addColumn(sectionPath));
+    treeEl.append(addColumnButton);
+  });
+}
+
+function renderInspector() {
+  inspectorEl.replaceChildren();
+  if (!selected) {
+    inspectorEl.innerHTML = '<p style="margin:0;font-size:13px;color:#5A616B">Veldu atriði í trénu til að breyta því.</p>';
+    return;
+  }
+  const node = at(selected);
+  if (!node) { selected = null; return renderInspector(); }
+  const kind = kindOf(selected);
+
+  const form = document.createElement('div');
+  const field = (labelText, control, hint) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'field';
+    const label = document.createElement('label');
+    label.textContent = labelText;
+    label.htmlFor = control.id;
+    wrap.append(label, control);
+    if (hint) wrap.append(hint);
+    form.append(wrap);
+    return wrap;
+  };
+
+  if (kind === 'item' || kind === 'card') {
+    const text = document.createElement('input');
+    text.type = 'text';
+    text.id = 'f-label';
+    text.value = kind === 'card' ? node.title : node.label;
+    text.addEventListener('input', () => {
+      if (kind === 'card') node.title = text.value; else node.label = text.value;
+      live();
+    });
+    field(kind === 'card' ? 'Fyrirsögn flokks' : 'Texti', text);
+  }
+
+  if (kind === 'item') {
+    const url = document.createElement('input');
+    url.type = 'url';
+    url.id = 'f-href';
+    url.value = node.href ?? '';
+    url.placeholder = 'https://www.reykjanesbaer.is/…';
+    const hint = document.createElement('p');
+    hint.className = 'hint';
+    const checkUrl = () => {
+      const value = url.value.trim();
+      if (!value) { hint.className = 'hint warn'; hint.textContent = 'Enginn hlekkur — birtist sem óvirkur texti.'; return; }
+      let parsed;
+      try { parsed = new URL(value); } catch { parsed = null; }
+      if (!parsed || !/^https?:$/.test(parsed.protocol)) {
+        hint.className = 'hint bad'; hint.textContent = 'Þetta er ekki gild slóð. Hún þarf að byrja á https://';
+      } else if (parsed.protocol === 'http:') {
+        hint.className = 'hint warn'; hint.textContent = 'Óörugg slóð (http). Notaðu https:// ef hægt er.';
+      } else {
+        hint.className = 'hint ok'; hint.textContent = 'Gild https-slóð.';
+      }
+    };
+    url.addEventListener('input', () => { node.href = url.value.trim(); checkUrl(); live(); });
+    checkUrl();
+    field('Hlekkur', url, hint);
+
+    const kindSelect = document.createElement('select');
+    kindSelect.id = 'f-kind';
+    for (const value of ['pdf', 'page', 'external', 'none']) {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = { pdf: 'PDF-skjal', page: 'Vefsíða', external: 'Ytri vefur', none: 'Enginn hlekkur' }[value];
+      option.selected = (node.kind ?? 'pdf') === value;
+      kindSelect.append(option);
+    }
+    kindSelect.addEventListener('change', () => { node.kind = kindSelect.value; commit(); });
+    field('Tegund', kindSelect);
+  }
+
+  if (kind === 'card' || (kind === 'item' && selected.includes('columns') === false)) {
+    const colorSelect = document.createElement('select');
+    colorSelect.id = 'f-color';
+    for (const value of ['primary', 'accent', 'pill']) {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = { primary: 'Blár (primary)', accent: 'Grænblár (accent)', pill: 'Ljósblár (pill)' }[value];
+      option.selected = (node.colorToken ?? (kind === 'card' ? 'primary' : 'pill')) === value;
+      colorSelect.append(option);
+    }
+    colorSelect.addEventListener('change', () => { node.colorToken = colorSelect.value; commit(); });
+    field('Litur', colorSelect);
+  }
+
+  const id = document.createElement('p');
+  id.className = 'hint';
+  id.innerHTML = `Auðkenni: <code>${node.id}</code>`;
+  form.append(id);
+
+  inspectorEl.append(form);
+}
+
+function renderStatus() {
+  const result = validate(doc);
+  const changed = formatJson(doc) !== formatJson(saved);
+  if (!result.ok) {
+    statusEl.innerHTML = `<strong style="color:#B3261E">${result.errors.length} villa(r):</strong> ${result.errors[0]}`;
+    return;
+  }
+  statusEl.innerHTML = changed
+    ? '<strong>Óvistaðar breytingar.</strong> Sæktu JSON og settu í <code>src/data/stefnurit.json</code>.'
+    : 'Engar breytingar frá vistuðu skjali.';
+}
+
+function setStatus(message, tone) {
+  statusEl.innerHTML = `<strong style="color:${tone === 'bad' ? '#B3261E' : '#14662B'}">${message}</strong>`;
+}
+
+// ---- drag to reorder --------------------------------------------------------
+let dragPath = null;
+
+treeEl.addEventListener('dragstart', (event) => {
+  const row = event.target.closest('.row');
+  if (!row) return;
+  dragPath = JSON.parse(row.dataset.path);
+  event.dataTransfer.effectAllowed = 'move';
+  event.dataTransfer.setData('text/plain', row.dataset.path);
+});
+
+treeEl.addEventListener('dragover', (event) => {
+  const row = event.target.closest('.row');
+  if (!row || !dragPath) return;
+  const path = JSON.parse(row.dataset.path);
+  // Reordering only makes sense between siblings; anything else is a no-op.
+  if (path.length !== dragPath.length || path.slice(0, -1).join() !== dragPath.slice(0, -1).join()) return;
+  event.preventDefault();
+  const box = row.getBoundingClientRect();
+  const after = event.clientY > box.top + box.height / 2;
+  treeEl.querySelectorAll('.drop-before, .drop-after').forEach((el) => el.classList.remove('drop-before', 'drop-after'));
+  row.classList.add(after ? 'drop-after' : 'drop-before');
+});
+
+treeEl.addEventListener('drop', (event) => {
+  const row = event.target.closest('.row');
+  if (!row || !dragPath) return;
+  const path = JSON.parse(row.dataset.path);
+  if (path.length !== dragPath.length || path.slice(0, -1).join() !== dragPath.slice(0, -1).join()) return;
+  event.preventDefault();
+  const box = row.getBoundingClientRect();
+  const after = event.clientY > box.top + box.height / 2;
+  reorder(dragPath, path.at(-1) + (after ? 1 : 0));
+  dragPath = null;
+});
+
+treeEl.addEventListener('dragend', () => {
+  dragPath = null;
+  treeEl.querySelectorAll('.drop-before, .drop-after').forEach((el) => el.classList.remove('drop-before', 'drop-after'));
+});
+
+// ---- toolbar ---------------------------------------------------------------
+document.getElementById('download').addEventListener('click', () => {
+  const blob = new Blob([formatJson(doc)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'stefnurit.json';
+  link.click();
+  URL.revokeObjectURL(url);
+  setStatus('Sótt. Settu skrána í src/data/stefnurit.json og ýttu henni inn í Git.', 'ok');
+});
+
+document.getElementById('copy').addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(formatJson(doc));
+    setStatus('JSON afritað á klippiborð.', 'ok');
+  } catch {
+    setStatus('Vafrinn leyfði ekki afritun — notaðu „Sækja JSON“.', 'bad');
+  }
+});
+
+const importDialog = document.getElementById('import-dialog');
+const importText = document.getElementById('import-text');
+const importHint = document.getElementById('import-hint');
+
+document.getElementById('import').addEventListener('click', () => {
+  importText.value = '';
+  importHint.textContent = '';
+  importDialog.showModal();
+});
+
+importDialog.addEventListener('close', () => {
+  if (importDialog.returnValue !== 'ok') return;
+  let parsed;
+  try { parsed = JSON.parse(importText.value); }
+  catch (error) { setStatus('Ógilt JSON: ' + error.message, 'bad'); return; }
+  const result = validate(parsed);
+  if (!result.ok) { setStatus('Skjalið stenst ekki skoðun: ' + result.errors[0], 'bad'); return; }
+  doc = parsed;
+  selected = null;
+  commit();
+  setStatus('Flutt inn.', 'ok');
+});
+
+document.getElementById('reset').addEventListener('click', () => {
+  doc = structuredClone(saved);
+  selected = null;
+  draft.clear();
+  render();
+  setStatus('Núllstillt á vistað skjal.', 'ok');
+});
+
+// ---- preview width ---------------------------------------------------------
+const stage = document.querySelector('.stage');
+for (const button of document.querySelectorAll('.widths button')) {
+  button.addEventListener('click', () => {
+    for (const other of document.querySelectorAll('.widths button')) {
+      other.setAttribute('aria-pressed', String(other === button));
+    }
+    const width = button.dataset.width;
+    if (width) stage.dataset.width = width;
+    else delete stage.dataset.width;
+  });
+}
+
+// ---- boot ------------------------------------------------------------------
+const response = await fetch(SOURCE);
+saved = await response.json();
+
+const stored = draft.read();
+doc = stored && validate(stored).ok ? stored : structuredClone(saved);
+render();
+if (stored && formatJson(stored) !== formatJson(saved)) {
+  setStatus('Hlóð óvistuðum drögum úr vafranum. „Núllstilla“ hendir þeim.', 'ok');
+}
+</script>
+</body>
+</html>

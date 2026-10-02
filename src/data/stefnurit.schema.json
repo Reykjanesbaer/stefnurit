@@ -1,0 +1,254 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://reykjanesbaer.github.io/stefnurit/stefnurit.schema.json",
+  "title": "Stefnurit",
+  "description": "Content for the <stefnu-rit> web component. This file is the single source of truth: editing it is all that is needed to change a link, add a card or add a column.",
+  "type": "object",
+  "required": [
+    "title",
+    "sections"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Used for the widget's accessible name. Not rendered as visible text."
+    },
+    "lang": {
+      "type": "string",
+      "default": "is",
+      "description": "BCP 47 language tag applied to the rendered content."
+    },
+    "theme": {
+      "type": "object",
+      "description": "Design-token overrides. Keys are token names without the --sr- prefix, e.g. \"color-accent\": \"#007E99\".",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "sections": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/section"
+      }
+    }
+  },
+  "definitions": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "description": "Unique across the whole document. Used for DOM ids, anchors and connector routing."
+    },
+    "colorToken": {
+      "enum": [
+        "primary",
+        "accent",
+        "pill"
+      ],
+      "description": "Which fill token this box uses. primary = #1F559F, accent = #009EBF, pill = #2562AE."
+    },
+    "linkKind": {
+      "enum": [
+        "pdf",
+        "page",
+        "external",
+        "none"
+      ],
+      "description": "pdf and page get the external-link indicator; none renders a non-clickable box."
+    },
+    "item": {
+      "type": "object",
+      "required": [
+        "id",
+        "label"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "href": {
+          "type": "string",
+          "default": "",
+          "description": "May be \"\" — the item then renders as a plain, non-clickable box with aria-disabled."
+        },
+        "kind": {
+          "$ref": "#/definitions/linkKind"
+        },
+        "colorToken": {
+          "$ref": "#/definitions/colorToken"
+        },
+        "note": {
+          "type": "string",
+          "description": "Tooltip / accessible description."
+        }
+      }
+    },
+    "card": {
+      "type": "object",
+      "required": [
+        "id",
+        "title",
+        "items"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "colorToken": {
+          "$ref": "#/definitions/colorToken"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/item"
+          }
+        }
+      }
+    },
+    "column": {
+      "type": "object",
+      "required": [
+        "id",
+        "cards"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "cards": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/card"
+          },
+          "description": "One or more stacked cards. Column 1 of the 2025 design has two."
+        }
+      }
+    },
+    "section": {
+      "type": "object",
+      "required": [
+        "id",
+        "kind"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "kind": {
+          "enum": [
+            "root",
+            "branch",
+            "columns"
+          ]
+        },
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/item"
+          },
+          "description": "Used by kind root and branch."
+        },
+        "columns": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/column"
+          },
+          "description": "Used by kind columns."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "root"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "required": [
+              "items"
+            ],
+            "properties": {
+              "items": {
+                "maxItems": 1
+              }
+            },
+            "not": {
+              "required": [
+                "columns"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "branch"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "required": [
+              "items"
+            ],
+            "not": {
+              "required": [
+                "columns"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "columns"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "required": [
+              "columns"
+            ],
+            "not": {
+              "required": [
+                "items"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

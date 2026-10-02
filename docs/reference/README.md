@@ -1,31 +1,17 @@
 # Design reference
 
-## What is here
+`stefnurit-2025-canva-thumb-614w.png` — a 614 × 325 render of the Canva design
+`DAG5D8uf0OE`, pulled through Canva's content API. The design page itself is
+1850 × 980.
 
-| File | Source | Size | Notes |
-|---|---|---|---|
-| `stefnurit-2025-canva-thumb-614w.png` | Canva page thumbnail, design `DAG5D8uf0OE` ("Stefnurit 2025") | 614 × 325 px | **Only ⅓-scale.** The design's real page size is 1850 × 980 px. |
+**Kept as provenance, not as a target.** The content, the links and the palette
+came from this file, and `docs/design-inventory.md` records what was measured
+off it, including seven defects in the original. The layout is the project's own
+now, so nothing is checked against this image any more.
 
-## Missing: the full-resolution export
-
-The prompt asks for `docs/reference/stefnurit-2025.png` exported "as large as
-possible". That file is **not** in the repo and could not be produced from this
-session:
-
-- `export-design` on the Canva API returns `Not allowed to access design with
-  id DAG5D8uf0OE` — the connected Canva account can read the design through the
-  share link but is not allowed to export it.
-- Canva's own render host (`media.canva.com`) is blocked by this environment's
-  egress policy (proxy returns 403 on CONNECT), so the thumbnail could not be
-  re-requested at a larger size either.
-
-Every measurement in `docs/design-inventory.md` was therefore taken from the
-614 px render and multiplied by 3.013 to reach the 1850 px reference width.
-That is accurate for flat fills (colour values are exact) and approximate for
-line weights, corner radii and font sizes — each of those is flagged in the
-inventory's *Doubts* section.
-
-**To remove the doubts:** open the design in Canva, `Share → Download → PNG`,
-tick *Size ×2* (or higher), and commit the result as
-`docs/reference/stefnurit-2025.png`. A PDF export works too and is better for
-measuring line weights.
+The full-size export the original brief asked for was never obtained: Canva
+refuses to export this design to the account available here, and its render host
+is blocked by the network policy of the environment this was built in. That
+mattered while the job was to reproduce the design to the pixel. It does not any
+more — but if you ever want a faithful record of the original, open it in Canva
+and use `Share → Download → PNG` at ×2.

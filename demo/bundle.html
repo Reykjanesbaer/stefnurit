@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="is">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stefnurit — búnt</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%231F559F'/%3E%3C/svg%3E">
+<style>
+  body { margin: 0; padding: 20px; font: 400 15px/1.5 system-ui, sans-serif; background: #fff; }
+  h2 { font-size: 14px; color: #5A616B; margin: 24px 0 8px; }
+  stefnu-rit:not([data-ready]) { display: block; min-height: 56rem; }
+  @media (max-width: 1399px) {
+    /* The layout stacks below this width, and gets taller. */
+    stefnu-rit:not([data-ready]) { min-height: 82rem; }
+  }
+</style>
+</head>
+<body>
+<!--
+  Checks the *built* artifacts, which is what a CMS actually loads — the other
+  demo pages run the source modules and would not catch a packaging mistake.
+  Needs `npm run build` first.
+-->
+<h2>dist/stefnu-rit.js — ES module</h2>
+<script type="module" src="../dist/stefnu-rit.js"></script>
+<stefnu-rit id="esm" src="../src/data/stefnurit.json"></stefnu-rit>
+
+<h2>dist/stefnu-rit.iife.js — plain script, for a CMS that cannot emit type="module"</h2>
+<script src="../dist/stefnu-rit.iife.js"></script>
+<stefnu-rit id="iife" src="../src/data/stefnurit.json"></stefnu-rit>
+</body>
+</html>

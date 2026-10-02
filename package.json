@@ -1,0 +1,33 @@
+{
+  "name": "stefnu-rit",
+  "version": "1.0.0",
+  "description": "Reykjanesbær Stefnurit — an embeddable, data-driven policy map web component",
+  "type": "module",
+  "license": "MIT",
+  "files": ["dist", "src"],
+  "main": "./dist/stefnu-rit.js",
+  "module": "./dist/stefnu-rit.js",
+  "exports": {
+    ".": "./dist/stefnu-rit.js",
+    "./data": "./src/data/stefnurit.json"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --port 4173",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "check-links": "node scripts/check-links.mjs",
+    "qa": "node scripts/visual-qa.mjs"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.1",
+    "@playwright/test": "^1.49.1",
+    "ajv": "^8.17.1",
+    "pixelmatch": "^6.0.0",
+    "pngjs": "^7.0.0",
+    "vite": "^6.0.7",
+    "vitest": "^2.1.8"
+  }
+}
