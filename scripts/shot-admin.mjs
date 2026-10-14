@@ -70,6 +70,38 @@ await page.getByRole('heading', { name: 'Yfirlit' }).waitFor();
 await page.waitForTimeout(300);
 await shoot('03-ahorfandi', 'Áhorfandi: ritstjórn og útgáfa óvirk');
 
+// Editor, with something selected so the inspector is not empty.
+await page.goto(`${origin}/admin/`);
+await page.getByLabel(/Aðgangslykill/).fill('test-token-publisher');
+await page.getByRole('button', { name: 'Skrá inn' }).click();
+await page.getByRole('heading', { name: 'Yfirlit' }).waitFor();
+await page.getByRole('button', { name: 'Ritstjóri', exact: true }).click();
+await page.getByRole('heading', { name: 'Ritstjóri' }).waitFor();
+await page.locator('.tree-name', { hasText: 'Innkaupastefna' }).first().click();
+await page.waitForTimeout(700);
+await shoot('04-ritstjori', 'Ritstjóri: efnistré, forskoðun og yfirferð');
+
+// A conflict, which is the screen people will need explained to them.
+await page.locator('#f-name').fill('Mín útgáfa');
+await page.getByRole('button', { name: 'Vista drög' }).click();
+await page.locator('.save-status').getByText(/Drög vistuð/).waitFor({ timeout: 10_000 });
+const theirs = await page.evaluate(async () => {
+  const read = await fetch(
+    'https://api.github.com/repos/Reykjanesbaer/stefnurit/contents/src/data/stefnurit.json?ref=stefnurit%2Fdraft-aron5109',
+    { headers: { authorization: 'Bearer test-token-publisher' } });
+  const data = await read.json();
+  const text = new TextDecoder().decode(Uint8Array.from(atob(data.content), (c) => c.charCodeAt(0)));
+  const document_ = JSON.parse(text);
+  document_.sections[2].columns[0].cards[0].items[0].label = 'Þeirra útgáfa';
+  return JSON.stringify(document_, null, 2) + '\n';
+});
+await fetch(`${mockOrigin}/__mock/control`, { method: 'POST', body: JSON.stringify({ concurrentWrite: theirs }) });
+await page.locator('#f-name').fill('Mín útgáfa, breytt aftur');
+await page.getByRole('button', { name: 'Vista drög' }).click();
+await page.locator('.conflict-dialog').waitFor({ timeout: 10_000 });
+await page.waitForTimeout(300);
+await shoot('05-arekstur', 'Árekstrargluggi: hvor breytingin á að gilda');
+
 await browser.close();
 server.close();
 mock.close();
