@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="is">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stefnurit — Reykjanesbær</title>
+<meta name="robots" content="noindex">
+<style>
+  html, body { margin: 0; padding: 0; background: #fff; }
+  stefnu-rit:not([data-ready]) { display: block; min-height: 56rem; }
+  @media (max-width: 1399px) { stefnu-rit:not([data-ready]) { min-height: 82rem; } }
+</style>
+</head>
+<body>
+<stefnu-rit id="rit"
+  src="../src/data/stefnurit.json"
+  fallback-href="https://www.reykjanesbaer.is/is/stjornsysla/stefnumotun"></stefnu-rit>
+<script type="module" src="./frame.js"></script>
+</body>
+</html>

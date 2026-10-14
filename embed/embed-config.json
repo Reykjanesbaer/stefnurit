@@ -1,0 +1,13 @@
+{
+  "$comment": "Pages that may embed the widget in an iframe. The frame posts its height to the parent, and a height message is only ever sent to an origin on this list — never to '*', which would hand any page that frames this a running commentary on the widget.",
+  "allowedParentOrigins": [
+    "https://www.reykjanesbaer.is",
+    "https://reykjanesbaer.is",
+    "https://reykjanesbaer.github.io"
+  ],
+  "developmentOrigins": [
+    "http://localhost:5173",
+    "http://localhost:4173",
+    "http://127.0.0.1:8777"
+  ]
+}
