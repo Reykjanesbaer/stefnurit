@@ -16,13 +16,51 @@
 /**
  * Below this width the column tree gives way to a stacked rail.
  *
- * Set by the content, not by a device: "Upplýsingaöryggisstefna" needs about
- * 260 px to sit on one line at the body size, and five of those plus gaps and
- * page padding comes to roughly 1400. Chromium ships no Icelandic hyphenation
- * patterns, so a narrower column has to break compounds mid-syllable, which
- * reads far worse than stacking.
+ * Set by the content, not by a device. The binding measurement is
+ * "Upplýsingaöryggisstefna", the longest label in the document: it wants about
+ * 185 px on one line at the body size, and Chromium ships no Icelandic
+ * hyphenation patterns, so a label box narrower than that has to break the
+ * compound mid-syllable.
+ *
+ * The threshold used to be 1400, which stacked every laptop made in the last
+ * decade. It is 1240 now because between 1240 and 1400 five columns survive on
+ * the design's own minimum spacing — see TIGHTEN_BELOW — with room to spare: a
+ * tightened column at 1240 gives the compound a 212 px label box, where the
+ * same column at 1400 on full spacing gives it 216 px. The mid-syllable break
+ * does not arrive until about 1080, so 1240 stops well clear of it rather than
+ * on top of it, and leaves the stacked rail for widths where a fifth of the row
+ * is genuinely too narrow to read. Measured, not guessed:
+ * docs/qa/README.md tabulates it at every width `npm run qa` renders.
  */
-export const STACK_BELOW = 1400;
+export const STACK_BELOW = 1240;
+
+/**
+ * Between STACK_BELOW and this width, spacing drops to the design's own floors.
+ *
+ * Every token the band overrides is set to the low end of a clamp this file
+ * already declares, so nothing new is invented — a 1280 px laptop simply gets
+ * the spacing a phone gets, which is what buys the fifth column.
+ *
+ * At and above this width not one pixel changes. That is a hard constraint, not
+ * a preference: the layout at 1400 px and up is the design that was signed off,
+ * and `npm run qa` renders it at 1400 for exactly that reason.
+ */
+export const TIGHTEN_BELOW = 1400;
+
+/**
+ * The token overrides that apply in the tightened band.
+ *
+ * Values, not a stylesheet, so the test suite can assert that each one is the
+ * floor of the clamp it replaces rather than an arbitrary smaller number.
+ */
+export const TIGHTENED = {
+  'page-padding-inline': '1rem',
+  'column-gap': '0.4rem',
+  'card-padding-inline': '0.9rem',
+  'card-padding-block': '0.85rem',
+  'backing-offset': '8px',
+  'backing-inset': '5px',
+};
 
 export const TOKENS = {
   // ---- colour (from the original, colour-picked; see docs/design-inventory.md)
