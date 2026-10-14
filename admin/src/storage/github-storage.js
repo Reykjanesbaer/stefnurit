@@ -140,6 +140,103 @@ export class GitHubStorage extends StorageAdapter {
    * and the report are served from the same site, so a relative path is both
    * correct and allowed.
    */
+  /**
+   * Open or update the pull request that publishes this person's draft.
+   *
+   * The note becomes the title and, later, the squash commit message — the one
+   * line somebody reads in six months when they ask why a link changed.
+   */
+  async publish({ login, note }) {
+    const head = this.draftBranch(login);
+    const base = this.#config.defaultBranch;
+
+    const existing = await this.#client.request(
+      `${this.#repo()}/pulls?head=${this.#config.owner}:${encodeURIComponent(head)}&state=open`,
+      { cache: false },
+    );
+    if (existing.data?.length) {
+      const pull = existing.data[0];
+      await this.#client.request(`${this.#repo()}/pulls/${pull.number}`, {
+        method: 'PATCH', body: { title: note, body: pullBody(note, login) },
+      });
+      return { number: pull.number, url: pull.html_url, created: false, head };
+    }
+
+    const { data } = await this.#client.request(`${this.#repo()}/pulls`, {
+      method: 'POST',
+      body: { title: note, head, base, body: pullBody(note, login) },
+    });
+    return { number: data.number, url: data.html_url, created: true, head };
+  }
+
+  /** The state of the required check on a pull request's head commit. */
+  async checkStatus({ number }) {
+    const pull = await this.#client.request(`${this.#repo()}/pulls/${number}`, { cache: false });
+    const sha = pull.data.head.sha;
+    const { data } = await this.#client.request(
+      `${this.#repo()}/commits/${sha}/check-runs`, { cache: false },
+    );
+    const runs = data.check_runs ?? [];
+    const required = runs.find((run) => run.name === this.#config.requiredCheckContext) ?? runs[0] ?? null;
+
+    return {
+      sha,
+      mergeable: pull.data.mergeable,
+      mergeableState: pull.data.mergeable_state,
+      state: required?.status ?? 'queued',
+      conclusion: required?.conclusion ?? null,
+      url: required?.html_url ?? pull.data.html_url,
+      runs: runs.map((run) => ({
+        name: run.name, status: run.status, conclusion: run.conclusion, url: run.html_url,
+      })),
+    };
+  }
+
+  /** Squash-merge, so main keeps one commit per published change. */
+  async merge({ number, note }) {
+    const { data } = await this.#client.request(`${this.#repo()}/pulls/${number}/merge`, {
+      method: 'PUT',
+      body: { merge_method: 'squash', commit_title: note, commit_message: '' },
+    });
+    return { sha: data.sha, merged: data.merged, mergedAt: new Date().toISOString() };
+  }
+
+  /** Merged pull requests, for the audit view. */
+  async activity({ limit = 25 } = {}) {
+    const { data } = await this.#client.request(
+      `${this.#repo()}/pulls?state=closed&sort=updated&direction=desc&per_page=${limit}`,
+      { cache: false },
+    );
+    return (data ?? [])
+      .filter((pull) => pull.merged_at)
+      .map((pull) => ({
+        number: pull.number,
+        title: pull.title,
+        author: pull.user?.login ?? 'óþekktur',
+        mergedAt: pull.merged_at,
+        url: pull.html_url,
+        sha: pull.merge_commit_sha,
+      }));
+  }
+
+  /**
+   * Ask Actions to run the link monitor now.
+   *
+   * Needs the optional Actions permission on the token; without it the panel
+   * links to the workflow page instead of pretending the button did something.
+   */
+  async requestLinkCheck() {
+    try {
+      await this.#client.request(
+        `${this.#repo()}/actions/workflows/pages.yml/dispatches`,
+        { method: 'POST', body: { ref: this.#config.defaultBranch } },
+      );
+      return { dispatched: true };
+    } catch (error) {
+      return { dispatched: false, reason: error.message, kind: error.kind };
+    }
+  }
+
   async linkStatus() {
     const candidates = [
       new URL(`../${this.#config.paths.linkStatus}`, document.baseURI).href,
@@ -226,6 +323,16 @@ export class GitHubStorage extends StorageAdapter {
     const loaded = await this.readDocument({ ref: sha });
     return loaded.document;
   }
+}
+
+function pullBody(note, login) {
+  return [
+    note,
+    '',
+    `Breytt í stjórnborði stefnuritsins af @${login}.`,
+    '',
+    'Athugunin `stefnurit / validate` prófar skjalið og alla hlekki sem breyttust.',
+  ].join('\n');
 }
 
 export { GitHubError, ERROR_KIND, ERROR_MESSAGE_IS };

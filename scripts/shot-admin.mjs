@@ -102,6 +102,30 @@ await page.locator('.conflict-dialog').waitFor({ timeout: 10_000 });
 await page.waitForTimeout(300);
 await shoot('05-arekstur', 'Árekstrargluggi: hvor breytingin á að gilda');
 
+// The remaining views, with the link report served from the fixture.
+const { readFileSync } = await import('node:fs');
+const report = readFileSync(new URL('../tests/fixtures/link-status.json', import.meta.url), 'utf8');
+await page.route('**/data/link-status.json', (route) => route.fulfill({
+  status: 200, contentType: 'application/json', body: report,
+}));
+
+await page.goto(`${origin}/admin/`);
+await page.getByLabel(/Aðgangslykill/).fill('test-token-publisher');
+await page.getByRole('button', { name: 'Skrá inn' }).click();
+await page.getByRole('heading', { name: 'Yfirlit' }).waitFor();
+
+for (const [view, name, note] of [
+  ['Hlekkir', '06-hlekkir', 'Hlekkir: staða hvers skjals, síur og CSV'],
+  ['Saga', '07-saga', 'Saga: allar útgáfur, samanburður og endurheimt'],
+  ['Aðgerðir', '08-adgerdir', 'Aðgerðir: hver birti hvað og hvenær'],
+  ['Aðgangur', '09-adgangur', 'Aðgangur: hverjir mega breyta'],
+]) {
+  await page.getByRole('button', { name: view, exact: true }).click();
+  await page.getByRole('heading', { name: view, level: 1 }).waitFor();
+  await page.waitForTimeout(600);
+  await shoot(name, note);
+}
+
 await browser.close();
 server.close();
 mock.close();

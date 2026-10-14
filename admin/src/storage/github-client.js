@@ -146,7 +146,13 @@ export class GitHubClient {
       detail = payload?.message ?? null;
     } catch { /* an error body is a nicety, not a requirement */ }
 
-    const remaining = Number(response.headers.get('x-ratelimit-remaining'));
+    // Read the header rather than coercing it: Number(null) is 0, so a header
+    // the browser cannot see — CORS hides anything not in
+    // Access-Control-Expose-Headers — would make every 403 look like an
+    // exhausted quota and tell somebody to wait half an hour over what is
+    // actually a missing permission.
+    const remainingHeader = response.headers.get('x-ratelimit-remaining');
+    const remaining = remainingHeader === null ? null : Number(remainingHeader);
     const resetAt = this.#rateLimit.resetAt;
 
     // GitHub returns 403 both for "you may not" and for "you have asked too
