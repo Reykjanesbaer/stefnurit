@@ -22,7 +22,12 @@ export function serve(port = 0) {
       const url = new URL(req.url, 'http://localhost');
       // normalize() collapses any ../ before the join, so a crafted path cannot
       // escape the repository root.
-      const path = join(ROOT, normalize(decodeURIComponent(url.pathname)));
+      // /admin/ serves the built panel, so the tests exercise what actually
+      // ships — including its Content-Security-Policy and the bundled modules.
+      let pathname = normalize(decodeURIComponent(url.pathname));
+      if (pathname === '/admin' || pathname === '/admin/') pathname = '/admin/dist/index.html';
+      else if (pathname.startsWith('/admin/')) pathname = `/admin/dist/${pathname.slice('/admin/'.length)}`;
+      const path = join(ROOT, pathname);
       if (!path.startsWith(ROOT)) {
         res.writeHead(403).end('forbidden');
         return;

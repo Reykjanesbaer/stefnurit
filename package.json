@@ -16,7 +16,9 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "npm run build:widget && npm run build:admin",
+    "build:widget": "vite build",
+    "build:admin": "vite build --config admin/vite.config.js",
     "preview": "vite preview --port 4173",
     "test": "vitest run",
     "test:watch": "vitest",

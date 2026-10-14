@@ -149,9 +149,9 @@ Contrast check — white on each fill:
 
 | Fill | Contrast vs #FFFFFF | WCAG AA (4.5:1) |
 |---|---|---|
-| `#1F559F` | 7.4:1 | pass |
-| `#2562AE` | 6.3:1 | pass |
-| `#009EBF` | 3.1:1 | **fail for body text** |
+| `#1F559F` | 7.35:1 | pass |
+| `#2562AE` | 6.11:1 | pass |
+| `#009EBF` | 3.16:1 | **fail for body text** |
 
 The teal cards carry 12 of the 24 links (all of Stjórnsýsla and Mannauðsmál),
 and the "Þjónustu- og gæðastefna" pill is teal too — so 13 of 24 fail AA for

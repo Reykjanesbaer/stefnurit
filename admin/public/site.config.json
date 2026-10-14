@@ -1,0 +1,23 @@
+{
+  "$comment": "Single source of truth for repository coordinates and public URLs. Switching to a custom domain is a one-line change to siteUrl.",
+  "owner": "Reykjanesbaer",
+  "repo": "stefnurit",
+  "defaultBranch": "main",
+  "siteUrl": "https://reykjanesbaer.github.io/stefnurit",
+  "repoUrl": "https://github.com/Reykjanesbaer/stefnurit",
+  "apiBase": "https://api.github.com",
+  "documentPath": "src/data/stefnurit.json",
+  "draftBranchPrefix": "stefnurit/draft-",
+  "requiredCheckDisplayName": "stefnurit / validate",
+  "requiredCheckContext": "validate",
+  "$requiredCheckNote": "GitHub shows the check as \"stefnurit / validate\" (workflow name / job name) but the check-run name the API reports, and what a ruleset matches on, is just \"validate\". Verified against the live run on pull request #3. docs/setup-github.md covers both forms.",
+  "brokenLinkIssueTitle": "Bilaðir hlekkir",
+  "brokenLinkIssueLabel": "broken-link",
+  "firstAdministrator": "aron5109",
+  "repositoryVisibility": "public",
+  "paths": {
+    "liveDocument": "src/data/stefnurit.json",
+    "linkStatus": "data/link-status.json",
+    "revisions": "data/revisions"
+  }
+}
