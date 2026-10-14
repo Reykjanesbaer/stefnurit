@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { readFileSync } from 'node:fs';
+import { TOKENS, STACK_BELOW, TIGHTEN_BELOW, TIGHTENED } from '../../src/tokens.js';
 
 const data = JSON.parse(readFileSync(new URL('../../src/data/stefnurit.json', import.meta.url), 'utf8'));
 
@@ -133,6 +134,83 @@ test.describe('rendering', () => {
     await page.setContent(`<iframe src="http://127.0.0.1:8777/demo/index.html" width="1200" height="900" style="border:0"></iframe>`);
     const frame = page.frameLocator('iframe');
     await expect(frame.locator('stefnu-rit .card')).toHaveCount(6, { timeout: 15_000 });
+  });
+});
+
+test.describe('the tightened band', () => {
+  /**
+   * The band is a container query, so it keys off the widget's own box rather
+   * than the window — and the demo page's padding makes the two differ. These
+   * tests are about the exact edges of the band, so the page chrome goes away
+   * and the widget gets the full viewport.
+   */
+  const fullWidth = (page) => page.addStyleTag({
+    content: '.page { max-width: none !important; padding: 0 !important; }',
+  });
+
+  /** What the band is for: a laptop keeps the columns instead of stacking. */
+  for (const width of [TIGHTEN_BELOW - 1, 1366, 1280, STACK_BELOW]) {
+    test(`keeps the columns and the tree at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 1200 });
+      await page.goto('/demo/index.html');
+      await fullWidth(page);
+      await ready(page);
+
+      const state = await page.locator('stefnu-rit').evaluate((el) => {
+        const root = el.shadowRoot;
+        const overflowing = [];
+        for (const card of root.querySelectorAll('.card')) {
+          const box = card.getBoundingClientRect();
+          for (const label of card.querySelectorAll('.label')) {
+            const r = label.getBoundingClientRect();
+            if (r.right > box.right + 1 || r.left < box.left - 1) overflowing.push(label.textContent.trim());
+          }
+        }
+        return {
+          columns: root.querySelectorAll('.grid .col').length,
+          stacked: getComputedStyle(root.querySelector('.grid')).display === 'block',
+          roles: [...root.querySelectorAll('.lines line')].map((l) => l.dataset.role),
+          padding: getComputedStyle(root.querySelector('.root')).getPropertyValue('--sr-page-padding-inline').trim(),
+          overflowing,
+        };
+      });
+
+      expect(state.stacked).toBe(false);
+      expect(state.columns).toBe(5);
+      expect(state.roles).toContain('trunk');
+      expect(state.overflowing).toEqual([]);
+      expect(state.padding).toBe(TIGHTENED['page-padding-inline']);
+    });
+  }
+
+  /**
+   * The other half of the bargain. The layout from TIGHTEN_BELOW up is the one
+   * that was signed off, so the band must not reach it by so much as a pixel.
+   */
+  test(`changes nothing at ${TIGHTEN_BELOW}px`, async ({ page }) => {
+    await page.setViewportSize({ width: TIGHTEN_BELOW, height: 1200 });
+    await page.goto('/demo/index.html');
+    await fullWidth(page);
+    await ready(page);
+
+    const tokens = await page.locator('stefnu-rit').evaluate((el, names) => {
+      const cs = getComputedStyle(el.shadowRoot.querySelector('.root'));
+      return Object.fromEntries(names.map((n) => [n, cs.getPropertyValue(`--sr-${n}`).trim()]));
+    }, Object.keys(TIGHTENED));
+
+    for (const name of Object.keys(TIGHTENED)) expect(tokens[name]).toBe(TOKENS[name]);
+  });
+
+  test(`stacks again at ${STACK_BELOW - 1}px`, async ({ page }) => {
+    await page.setViewportSize({ width: STACK_BELOW - 1, height: 1200 });
+    await page.goto('/demo/index.html');
+    await fullWidth(page);
+    await ready(page);
+
+    const roles = await page.locator('stefnu-rit').evaluate(
+      (el) => [...el.shadowRoot.querySelectorAll('.lines line')].map((l) => l.dataset.role),
+    );
+    expect(roles).not.toContain('trunk');
   });
 });
 

@@ -17,18 +17,20 @@
  * Below this width the column tree gives way to a stacked rail.
  *
  * Set by the content, not by a device. The binding measurement is
- * "Upplýsingaöryggisstefna" with its external-link icon: at the body size it
- * wants roughly 205 px of label, and five columns of that plus gaps and page
- * padding is more than a 1366 px laptop has. Chromium ships no Icelandic
- * hyphenation patterns, so a column narrower than the word has to break the
+ * "Upplýsingaöryggisstefna", the longest label in the document: it wants about
+ * 185 px on one line at the body size, and Chromium ships no Icelandic
+ * hyphenation patterns, so a label box narrower than that has to break the
  * compound mid-syllable.
  *
  * The threshold used to be 1400, which stacked every laptop made in the last
- * decade. It is 1240 now because between 1240 and 1400 the columns survive on
- * the design's own minimum spacing — see TIGHTEN_BELOW. Below 1240 they do not:
- * labels start overflowing their cards rather than merely wrapping, which is
- * the point where stacking is the better answer. Measured, not guessed:
- * docs/qa/breakpoints/README.md has the numbers and the screenshots.
+ * decade. It is 1240 now because between 1240 and 1400 five columns survive on
+ * the design's own minimum spacing — see TIGHTEN_BELOW — with room to spare: a
+ * tightened column at 1240 gives the compound a 212 px label box, where the
+ * same column at 1400 on full spacing gives it 216 px. The mid-syllable break
+ * does not arrive until about 1080, so 1240 stops well clear of it rather than
+ * on top of it, and leaves the stacked rail for widths where a fifth of the row
+ * is genuinely too narrow to read. Measured, not guessed:
+ * docs/qa/README.md tabulates it at every width `npm run qa` renders.
  */
 export const STACK_BELOW = 1240;
 
@@ -37,11 +39,11 @@ export const STACK_BELOW = 1240;
  *
  * Every token the band overrides is set to the low end of a clamp this file
  * already declares, so nothing new is invented — a 1280 px laptop simply gets
- * the padding a phone gets, which is what buys the fifth column.
+ * the spacing a phone gets, which is what buys the fifth column.
  *
  * At and above this width not one pixel changes. That is a hard constraint, not
  * a preference: the layout at 1400 px and up is the design that was signed off,
- * and `npm run qa` diffs against it.
+ * and `npm run qa` renders it at 1400 for exactly that reason.
  */
 export const TIGHTEN_BELOW = 1400;
 

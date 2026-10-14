@@ -15,69 +15,11 @@ import { fileURLToPath } from 'node:url';
 import { api, repoCoordinates } from './github-api.mjs';
 import { needsAttention, OUTCOME, OUTCOME_IS } from './check-links.mjs';
 
-const root = fileURLToPath(new URL('..', import.meta.url));
-const config = JSON.parse(await readFile(`${root}site.config.json`, 'utf8'));
-const reportPath = `${root}${config.paths.linkStatus}`;
-
-if (!existsSync(reportPath)) {
-  console.log('Engin hlekkjaskýrsla til — ekkert að gera.');
-  process.exit(0);
-}
-if (!process.env.GITHUB_TOKEN) {
-  console.log('GITHUB_TOKEN vantar — sleppi samstillingu við GitHub-mál.');
-  process.exit(0);
-}
-
-const report = JSON.parse(await readFile(reportPath, 'utf8'));
-const problems = needsAttention(report);
-const { owner, repo } = repoCoordinates();
-const title = config.brokenLinkIssueTitle;
-const label = config.brokenLinkIssueLabel;
-
-await ensureLabel();
-
-// Search rather than list-and-filter: the repo may accumulate many issues.
-const found = await api(
-  `/search/issues?q=${encodeURIComponent(`repo:${owner}/${repo} is:issue in:title "${title}"`)}`,
-);
-const existing = found.items?.find((issue) => issue.title === title) ?? null;
-
-if (problems.length === 0) {
-  if (existing && existing.state === 'open') {
-    await api(`/repos/${owner}/${repo}/issues/${existing.number}/comments`, {
-      method: 'POST',
-      body: { body: closingComment(report) },
-    });
-    await api(`/repos/${owner}/${repo}/issues/${existing.number}`, {
-      method: 'PATCH',
-      body: { state: 'closed', state_reason: 'completed' },
-    });
-    console.log(`✅ Allir hlekkir í lagi — lokaði máli #${existing.number}.`);
-  } else {
-    console.log('✅ Allir hlekkir í lagi — ekkert mál opið.');
-  }
-  process.exit(0);
-}
-
-const body = issueBody(report, problems);
-
-if (existing) {
-  await api(`/repos/${owner}/${repo}/issues/${existing.number}`, {
-    method: 'PATCH',
-    body: { body, state: 'open', labels: [label] },
-  });
-  console.log(`⚠️  ${problems.length} hlekkur/hlekkir í ólagi — uppfærði mál #${existing.number}.`);
-} else {
-  const created = await api(`/repos/${owner}/${repo}/issues`, {
-    method: 'POST',
-    body: { title, body, labels: [label] },
-  });
-  console.log(`⚠️  ${problems.length} hlekkur/hlekkir í ólagi — opnaði mál #${created.number}.`);
-}
-
 // ---- rendering --------------------------------------------------------------
+//
+// Pure, and exported so the tests can render a body without touching GitHub.
 
-function issueBody(fullReport, list) {
+export function issueBody(fullReport, list) {
   const broken = list.filter((l) => l.outcome === OUTCOME.BROKEN);
   const unknown = list.filter((l) => l.outcome === OUTCOME.UNKNOWN);
 
@@ -122,7 +64,7 @@ function issueBody(fullReport, list) {
   ].filter(Boolean).join('\n');
 }
 
-function closingComment(fullReport) {
+export function closingComment(fullReport) {
   return [
     '✅ Allir hlekkir svara eðlilega aftur.',
     '',
@@ -147,7 +89,7 @@ function formatTime(iso) {
   return `${get('day')}.${get('month')}.${get('year')} kl. ${get('hour')}:${get('minute')}`;
 }
 
-async function ensureLabel() {
+async function ensureLabel({ owner, repo, label }) {
   try {
     await api(`/repos/${owner}/${repo}/labels/${encodeURIComponent(label)}`);
   } catch {
@@ -162,4 +104,75 @@ async function ensureLabel() {
   }
 }
 
-const escapeCell = (text) => String(text).replace(/\|/g, '\\|');
+/** A `|` inside a label would split the Markdown table cell. */
+function escapeCell(text) {
+  return String(text).replace(/\|/g, '\\|');
+}
+
+// ---- the run ----------------------------------------------------------------
+
+async function main() {
+  const root = fileURLToPath(new URL('..', import.meta.url));
+  const config = JSON.parse(await readFile(`${root}site.config.json`, 'utf8'));
+  const reportPath = `${root}${config.paths.linkStatus}`;
+
+  if (!existsSync(reportPath)) {
+    console.log('Engin hlekkjaskýrsla til — ekkert að gera.');
+    return;
+  }
+  if (!process.env.GITHUB_TOKEN) {
+    console.log('GITHUB_TOKEN vantar — sleppi samstillingu við GitHub-mál.');
+    return;
+  }
+
+  const report = JSON.parse(await readFile(reportPath, 'utf8'));
+  const problems = needsAttention(report);
+  const { owner, repo } = repoCoordinates();
+  const title = config.brokenLinkIssueTitle;
+  const label = config.brokenLinkIssueLabel;
+
+  await ensureLabel({ owner, repo, label });
+
+  // Search rather than list-and-filter: the repo may accumulate many issues.
+  const found = await api(
+    `/search/issues?q=${encodeURIComponent(`repo:${owner}/${repo} is:issue in:title "${title}"`)}`,
+  );
+  const existing = found.items?.find((issue) => issue.title === title) ?? null;
+
+  if (problems.length === 0) {
+    if (existing && existing.state === 'open') {
+      await api(`/repos/${owner}/${repo}/issues/${existing.number}/comments`, {
+        method: 'POST',
+        body: { body: closingComment(report) },
+      });
+      await api(`/repos/${owner}/${repo}/issues/${existing.number}`, {
+        method: 'PATCH',
+        body: { state: 'closed', state_reason: 'completed' },
+      });
+      console.log(`✅ Allir hlekkir í lagi — lokaði máli #${existing.number}.`);
+    } else {
+      console.log('✅ Allir hlekkir í lagi — ekkert mál opið.');
+    }
+    return;
+  }
+
+  const body = issueBody(report, problems);
+
+  if (existing) {
+    await api(`/repos/${owner}/${repo}/issues/${existing.number}`, {
+      method: 'PATCH',
+      body: { body, state: 'open', labels: [label] },
+    });
+    console.log(`⚠️  ${problems.length} hlekkur/hlekkir í ólagi — uppfærði mál #${existing.number}.`);
+  } else {
+    const created = await api(`/repos/${owner}/${repo}/issues`, {
+      method: 'POST',
+      body: { title, body, labels: [label] },
+    });
+    console.log(`⚠️  ${problems.length} hlekkur/hlekkir í ólagi — opnaði mál #${created.number}.`);
+  }
+}
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  await main();
+}

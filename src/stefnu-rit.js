@@ -276,6 +276,9 @@ a.pill:focus-visible {
    screen that is plainly wide enough, spacing drops to the floors declared in
    tokens.js — the same values a phone gets — and the columns stay.
 
+   The overrides land on .root rather than :host because :host is the container
+   itself, and a container query cannot style its own container.
+
    The band stops one pixel below TIGHTEN_BELOW. Above it nothing here applies,
    which is what keeps the signed-off layout pixel-identical. */
 @container (min-width: ${STACK_BELOW}px) and (max-width: ${TIGHTEN_BELOW - 1}px) {

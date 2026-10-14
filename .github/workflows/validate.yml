@@ -25,20 +25,20 @@ jobs:
   validate:
     name: validate
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     permissions:
       contents: read
       pull-requests: write
 
     steps:
       - name: Check out the pull request
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # The link check diffs against the base branch, so it needs history.
           fetch-depth: 0
 
       - name: Set up Node
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: npm
@@ -54,6 +54,27 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      # After the build: /admin/ in the tests is served from admin/dist, so these
+      # exercise the panel that actually ships, not the sources.
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Browser tests
+        run: npx playwright test
+
+      # The trace and the HTML report are the only way to see why a browser test
+      # failed on a runner nobody can attach a debugger to.
+      - name: Keep the report when a browser test fails
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 14
 
       - name: Check the links this pull request changes
         env:
