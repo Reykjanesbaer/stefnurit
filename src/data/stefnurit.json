@@ -1,5 +1,6 @@
 {
   "$schema": "./stefnurit.schema.json",
+  "schemaVersion": 1,
   "title": "Stefnurit 2025",
   "lang": "is",
   "theme": {},

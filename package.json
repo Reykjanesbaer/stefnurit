@@ -4,7 +4,10 @@
   "description": "Reykjanesbær Stefnurit — an embeddable, data-driven policy map web component",
   "type": "module",
   "license": "MIT",
-  "files": ["dist", "src"],
+  "files": [
+    "dist",
+    "src"
+  ],
   "main": "./dist/stefnu-rit.js",
   "module": "./dist/stefnu-rit.js",
   "exports": {
@@ -19,6 +22,10 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "check-links": "node scripts/check-links.mjs",
+    "check-changed-links": "node scripts/check-changed-links.mjs",
+    "validate:data": "node scripts/validate-document.mjs",
+    "format:data": "node scripts/format-document.mjs",
+    "assemble": "node scripts/assemble-pages.mjs",
     "qa": "node scripts/visual-qa.mjs"
   },
   "devDependencies": {

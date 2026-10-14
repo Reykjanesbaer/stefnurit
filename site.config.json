@@ -1,0 +1,21 @@
+{
+  "$comment": "Single source of truth for repository coordinates and public URLs. Switching to a custom domain is a one-line change to siteUrl.",
+  "owner": "Reykjanesbaer",
+  "repo": "stefnurit",
+  "defaultBranch": "main",
+  "siteUrl": "https://reykjanesbaer.github.io/stefnurit",
+  "repoUrl": "https://github.com/Reykjanesbaer/stefnurit",
+  "apiBase": "https://api.github.com",
+  "documentPath": "src/data/stefnurit.json",
+  "draftBranchPrefix": "stefnurit/draft-",
+  "requiredCheckName": "stefnurit / validate",
+  "brokenLinkIssueTitle": "Bilaðir hlekkir",
+  "brokenLinkIssueLabel": "broken-link",
+  "firstAdministrator": "aron5109",
+  "repositoryVisibility": "public",
+  "paths": {
+    "liveDocument": "src/data/stefnurit.json",
+    "linkStatus": "data/link-status.json",
+    "revisions": "data/revisions"
+  }
+}
