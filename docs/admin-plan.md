@@ -186,6 +186,12 @@ Reads send `If-None-Match`; a `304` costs no rate-limit quota.
 
 The required check is **`stefnurit / validate`** — workflow name, then job name.
 
+One wrinkle, found by running it rather than by reading the docs: that is the
+form GitHub *displays*. The check-run name the API returns, and the context a
+branch ruleset actually matches on, is just **`validate`**. Verified on the live
+run for pull request #3. `docs/setup-github.md` gives both, and the first-run
+checklist has the person setting the rule confirm which one the UI offers.
+
 The monitor never fails the deploy. A municipal web server being slow on a
 Monday is not a reason to stop publishing.
 
