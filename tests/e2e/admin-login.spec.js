@@ -201,10 +201,14 @@ test.describe('security', () => {
   test('the CSP forbids inline script', async ({ page }) => {
     await page.goto('/admin/');
     const csp = await page.locator('meta[http-equiv="Content-Security-Policy"]').getAttribute('content');
+    // Scripts get no inline allowance. Styles do, because the previewed widget
+    // carries its stylesheet inside its shadow root as a <style> element, and
+    // blocking it renders the preview unstyled rather than failing loudly.
     const scriptSrc = /script-src([^;]*)/.exec(csp)[1];
     expect(scriptSrc).toContain("'self'");
     expect(scriptSrc).not.toContain('unsafe-inline');
     expect(scriptSrc).not.toContain('unsafe-eval');
+    expect(/style-src([^;]*)/.exec(csp)[1]).toContain('unsafe-inline');
     expect(csp).toContain("connect-src 'self' https://api.github.com");
     expect(csp).toContain("object-src 'none'");
 

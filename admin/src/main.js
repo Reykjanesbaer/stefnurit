@@ -10,11 +10,12 @@ import { GitHubStorage } from './storage/github-storage.js';
 import { GitHubError, ERROR_KIND, ROLE_LABEL_IS, ROLE_DESCRIPTION_IS } from './storage/github-client.js';
 import { renderLogin } from './views/login.js';
 import { renderYfirlit } from './views/yfirlit.js';
+import { renderRitstjori, resetEditorSession } from './views/ritstjori.js';
 import { formatDateTime } from './ui/format.js';
 
 const VIEWS = [
   { id: 'yfirlit', label: 'Yfirlit', render: renderYfirlit },
-  { id: 'ritstjori', label: 'Ritstjóri', minRole: 'editor' },
+  { id: 'ritstjori', label: 'Ritstjóri', minRole: 'editor', render: renderRitstjori },
   { id: 'utgafa', label: 'Útgáfa', minRole: 'editor' },
   { id: 'saga', label: 'Saga' },
   { id: 'hlekkir', label: 'Hlekkir' },
@@ -106,6 +107,9 @@ function renderApp() {
   app.setAttribute('aria-busy', String(state.busy));
   clear(app);
 
+  // Views that attach document-level listeners clean up on this event.
+  app.querySelector('.content')?.dispatchEvent(new CustomEvent('sr-unmount'));
+
   const view = VIEWS.find((v) => v.id === state.view) ?? VIEWS[0];
   const main = el('main', { id: 'efni', class: 'content', tabindex: '-1' });
 
@@ -153,6 +157,7 @@ function renderHeader() {
         on: {
           click: () => {
             tokenStore.clear();
+            resetEditorSession();
             update({ identity: null, storage: null, live: null, draft: null });
             showLogin(null);
             announce('Þú ert skráður út.');
