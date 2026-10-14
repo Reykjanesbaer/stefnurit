@@ -15,6 +15,7 @@ import { formatJson } from '../../../src/format.js';
 import { diff } from '../../../src/diff.js';
 import { History } from '../editor/history.js';
 import { createAutosaver, loadLocal, clearLocal, pruneLocal } from '../editor/autosave.js';
+import { update } from '../state.js';
 import { OUTCOME_IS } from './link-labels.js';
 import '../../../src/stefnu-rit.js';
 
@@ -546,6 +547,16 @@ function mountEditor(root, { state, onNavigate }) {
         message: 'Uppfæra drög að stefnuriti',
       });
       session.remoteSha = saved.sha;
+      // The other views read state.draft; without this, Útgáfa still believes
+      // there is nothing to publish immediately after a save.
+      update({
+        draft: {
+          document: structuredClone(history.current),
+          sha: saved.sha,
+          commit: saved.commit,
+          ref: saved.branch,
+        },
+      });
       session.message = { tone: 'ok', text: `Drög vistuð á GitHub kl. ${formatTime(new Date())}.` };
       clearLocal(session.login, session.baseCommit);
       session.savedAt = null;

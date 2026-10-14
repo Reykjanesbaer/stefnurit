@@ -11,16 +11,21 @@ import { GitHubError, ERROR_KIND, ROLE_LABEL_IS, ROLE_DESCRIPTION_IS } from './s
 import { renderLogin } from './views/login.js';
 import { renderYfirlit } from './views/yfirlit.js';
 import { renderRitstjori, resetEditorSession } from './views/ritstjori.js';
+import { renderUtgafa, resetPublishState } from './views/utgafa.js';
+import { renderSaga } from './views/saga.js';
+import { renderHlekkir } from './views/hlekkir.js';
+import { renderAdgerdir } from './views/adgerdir.js';
+import { renderAdgangur } from './views/adgangur.js';
 import { formatDateTime } from './ui/format.js';
 
 const VIEWS = [
   { id: 'yfirlit', label: 'Yfirlit', render: renderYfirlit },
   { id: 'ritstjori', label: 'Ritstjóri', minRole: 'editor', render: renderRitstjori },
-  { id: 'utgafa', label: 'Útgáfa', minRole: 'editor' },
-  { id: 'saga', label: 'Saga' },
-  { id: 'hlekkir', label: 'Hlekkir' },
-  { id: 'adgerdir', label: 'Aðgerðir' },
-  { id: 'adgangur', label: 'Aðgangur' },
+  { id: 'utgafa', render: renderUtgafa, label: 'Útgáfa', minRole: 'editor' },
+  { id: 'saga', render: renderSaga, label: 'Saga' },
+  { id: 'hlekkir', render: renderHlekkir, label: 'Hlekkir' },
+  { id: 'adgerdir', render: renderAdgerdir, label: 'Aðgerðir' },
+  { id: 'adgangur', render: renderAdgangur, label: 'Aðgangur' },
   { id: 'stillingar', label: 'Stillingar', minRole: 'editor' },
   { id: 'hjalp', label: 'Hjálp' },
 ];
@@ -158,6 +163,7 @@ function renderHeader() {
           click: () => {
             tokenStore.clear();
             resetEditorSession();
+            resetPublishState();
             update({ identity: null, storage: null, live: null, draft: null });
             showLogin(null);
             announce('Þú ert skráður út.');

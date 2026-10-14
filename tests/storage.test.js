@@ -185,6 +185,32 @@ describe('client behaviour', () => {
     expect(error.resetAt).toMatch(/^\d{4}-/);
   });
 
+  // Number(null) is 0, so a quota header the browser cannot read used to make
+  // every 403 look like an exhausted rate limit.
+  test('a 403 with no readable quota header is forbidden, not rate limited', async () => {
+    const client = new GitHubClient({
+      token: 't', apiBase: origin,
+      fetchImpl: async () => new Response('{"message":"Must have admin rights"}', {
+        status: 403, headers: { 'content-type': 'application/json' },   // no ratelimit headers
+      }),
+    });
+    const error = await client.request('/x').catch((e) => e);
+    expect(error.kind).toBe(ERROR_KIND.FORBIDDEN);
+    expect(error.message).toContain('réttindi');
+  });
+
+  test('a 403 with the quota actually exhausted is rate limited', async () => {
+    const client = new GitHubClient({
+      token: 't', apiBase: origin,
+      fetchImpl: async () => new Response('{"message":"API rate limit exceeded"}', {
+        status: 403,
+        headers: { 'content-type': 'application/json', 'x-ratelimit-remaining': '0' },
+      }),
+    });
+    const error = await client.request('/x').catch((e) => e);
+    expect(error.kind).toBe(ERROR_KIND.RATE_LIMITED);
+  });
+
   test('a 5xx is a server error, so the UI can offer a retry', async () => {
     await fetch(`${origin}/__mock/control`, { method: 'POST', body: JSON.stringify({ forceServerError: true }) });
     await expect(storageFor('test-token-editor').whoAmI())
