@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="is">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stjórnborð stefnurits — Reykjanesbær</title>
+<meta name="robots" content="noindex, nofollow">
+
+<!--
+  No inline script, no eval, and the only place this page may talk to is the
+  GitHub API and itself. `frame-ancestors` is deliberately absent: browsers
+  ignore it in a meta tag, so frame-guard.js below does that job instead.
+-->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self';
+  style-src 'self';
+  img-src 'self' https://avatars.githubusercontent.com data:;
+  connect-src 'self' https://api.github.com;
+  form-action 'none';
+  base-uri 'none';
+  object-src 'none'">
+
+<!-- Blocking, before anything renders. -->
+<script src="./frame-guard.js"></script>
+
+<link rel="stylesheet" href="./src/styles.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%231F559F'/%3E%3C/svg%3E">
+</head>
+<body>
+<a class="skip-link" href="#efni">Fara beint í efnið</a>
+<div id="app" aria-busy="true">
+  <p class="booting">Hleð stjórnborðinu…</p>
+</div>
+<noscript>
+  <p style="padding:2rem;font:16px/1.6 system-ui,sans-serif">
+    Stjórnborðið þarf JavaScript. Þú getur breytt skjalinu beint á GitHub í staðinn —
+    sjá leiðbeiningar í README-skránni.
+  </p>
+</noscript>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>

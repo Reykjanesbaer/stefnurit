@@ -153,7 +153,7 @@ writes the screenshots to [`docs/qa/`](docs/qa/).
 
 ### One thing to decide: the teal and WCAG AA
 
-White text on the teal (`#009EBF`) is **3.1 : 1**. AA wants 4.5 : 1 for text this
+White text on the teal (`#009EBF`) is **3.16 : 1**. AA wants 4.5 : 1 for text this
 size, and **13 of the 24 links sit on teal** — all of *Stjórnsýsla* and
 *Mannauðsmál*, plus the *Þjónustu- og gæðastefna* pill.
 
