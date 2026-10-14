@@ -14,7 +14,7 @@
  * No dependencies, no build step required, no framework.
  */
 
-import { TOKENS, THEMEABLE, STACK_BELOW } from './tokens.js';
+import { TOKENS, THEMEABLE, STACK_BELOW, TIGHTEN_BELOW, TIGHTENED } from './tokens.js';
 import { FIGTREE_FACES } from './assets/fonts.js';
 import { validate } from './validate.js';
 import { routeTree, routeRail } from './lines.js';
@@ -268,6 +268,23 @@ a.pill:focus-visible {
   height: var(--sr-icon-size);
   vertical-align: -0.09em;
   flex: none;
+}
+
+/* ---- tightened columns ------------------------------------------------------
+   A 1280 or 1366 px laptop has room for five columns, but not for five columns
+   plus the page padding and gaps the design uses at 1850. Rather than stack a
+   screen that is plainly wide enough, spacing drops to the floors declared in
+   tokens.js — the same values a phone gets — and the columns stay.
+
+   The overrides land on .root rather than :host because :host is the container
+   itself, and a container query cannot style its own container.
+
+   The band stops one pixel below TIGHTEN_BELOW. Above it nothing here applies,
+   which is what keeps the signed-off layout pixel-identical. */
+@container (min-width: ${STACK_BELOW}px) and (max-width: ${TIGHTEN_BELOW - 1}px) {
+  .root {
+${Object.entries(TIGHTENED).map(([name, value]) => `    --sr-${name}: ${value};`).join('\n')}
+  }
 }
 
 /* ---- stacked layout -------------------------------------------------------- */
