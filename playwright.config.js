@@ -1,12 +1,22 @@
 import { defineConfig, devices } from '@playwright/test';
+import { resolveChromium } from './scripts/chromium-path.mjs';
 
 /**
- * Some CI images ship a Chromium that does not match the build Playwright
- * would download; PLAYWRIGHT_CHROMIUM_EXECUTABLE points at the installed one.
+ * Which Chromium to launch.
+ *
+ * PLAYWRIGHT_CHROMIUM_EXECUTABLE wins when it is set. Without it the resolver
+ * prefers Playwright's own build and falls back to whatever Chromium the image
+ * ships, so `npm run test:e2e` works on a developer machine that ran
+ * `npx playwright install` and on a CI image that pre-installs a different
+ * revision, without either needing to know about the other.
  */
-const launchOptions = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE
-  ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE }
-  : {};
+const chromium = resolveChromium();
+const launchOptions = chromium.executablePath ? { executablePath: chromium.executablePath } : {};
+
+// The config is re-evaluated in every worker; only the main process reports.
+if (chromium.executablePath && process.env.TEST_WORKER_INDEX === undefined) {
+  console.log(`[playwright] Chromium: ${chromium.executablePath} (${chromium.source})`);
+}
 
 export default defineConfig({
   testDir: './tests/e2e',

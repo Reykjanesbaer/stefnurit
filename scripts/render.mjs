@@ -1,5 +1,6 @@
 /** Shared browser-rendering helper for the QA and screenshot scripts. */
 import { chromium } from '@playwright/test';
+import { resolveChromium } from './chromium-path.mjs';
 import { serve } from './serve.mjs';
 
 /** Strip the demo page chrome so only the widget itself is in frame. */
@@ -11,12 +12,13 @@ const BARE = `
 `;
 
 /**
- * Some CI images ship a Chromium that does not match the version Playwright
- * would download. PLAYWRIGHT_CHROMIUM_EXECUTABLE points at the one that is
- * actually installed; without it, Playwright resolves its own as usual.
+ * Which Chromium to launch — the same resolution the Playwright config uses, so
+ * `npm run qa` and `npm run test:e2e` never disagree about which browser they
+ * measured. See scripts/chromium-path.mjs.
  */
-export const launchOptions = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE
-  ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE }
+const resolved = resolveChromium();
+export const launchOptions = resolved.executablePath
+  ? { executablePath: resolved.executablePath }
   : {};
 
 export async function withWidget(fn, { page: pagePath = '/demo/index.html' } = {}) {

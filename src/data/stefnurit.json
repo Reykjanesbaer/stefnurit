@@ -12,7 +12,7 @@
         {
           "id": "stefna-reykjanesbaejar",
           "label": "Stefna Reykjanesbæjar",
-          "href": "https://www.reykjanesbaer.is/static/files/pdf_skjol_allir/samthykkt-stefna_uppfaert-utlit_25feb2020.pdf",
+          "href": "https://reykjanesbaer.payload.is/api/media/file/stefna-reykjanesbaejar-2020-2031.pdf",
           "kind": "pdf",
           "colorToken": "pill"
         }
@@ -25,14 +25,14 @@
         {
           "id": "mannrettindastefna",
           "label": "Mannréttindastefna",
-          "href": "https://www.reykjanesbaer.is/static/files/pdf_skjol_allir/2024/desember/mannrettindastefna-reykjanesbaejar-2024.pdf",
+          "href": "https://reykjanesbaer.payload.is/api/media/file/mannrettindastefna-1.pdf",
           "kind": "pdf",
           "colorToken": "pill"
         },
         {
           "id": "tjonustu-og-gaedastefna",
           "label": "Þjónustu- og gæðastefna",
-          "href": "https://www.reykjanesbaer.is/static/files/pdf_skjol_allir/2023/januar/gaeda_og_tjonustustefna_2020_2025.pdf",
+          "href": "https://reykjanesbaer.payload.is/api/media/file/thjonustu-og-gaedastefna.pdf",
           "kind": "pdf",
           "colorToken": "accent"
         }
@@ -53,49 +53,49 @@
                 {
                   "id": "innkaupastefna",
                   "label": "Innkaupastefna",
-                  "href": "https://www.reykjanesbaer.is/static/files/pdf_skjol_allir/innkaupastefna-reykjanesbaejar.pdf",
+                  "href": "https://reykjanesbaer.payload.is/api/media/file/innkaupastefna-reykjanesbaejar.pdf",
                   "kind": "pdf"
                 },
                 {
                   "id": "personuverndarstefna",
                   "label": "Persónuverndarstefna",
-                  "href": "https://www.reykjanesbaer.is/static/files/pdf_skjol_allir/personuverndarstefna-reykjanesbaejar_ny.pdf",
+                  "href": "https://reykjanesbaer.payload.is/api/media/file/personuverndarstefna-reykjanesbaejar-1.pdf",
                   "kind": "pdf"
                 },
                 {
                   "id": "stefna-i-skjalamalum",
                   "label": "Stefna Reykjanesbæjar í skjalamálum",
-                  "href": "https://www.reykjanesbaer.is/static/files/pdf_skjol_allir/stefna-reykjanesbaejar-i-skjalamalum.pdf",
+                  "href": "https://reykjanesbaer.payload.is/api/media/file/stefna-reykjanesbaejar-i-skjalamalum.pdf",
                   "kind": "pdf"
                 },
                 {
                   "id": "upplysingataeknistefna",
                   "label": "Upplýsingatæknistefna",
-                  "href": "https://www.reykjanesbaer.is/static/files/pdf_skjol_allir/upplysingataeknistefna-reykjanesbaejar.pdf",
+                  "href": "https://reykjanesbaer.payload.is/api/media/file/upplysingataeknistefna-reykjanesbaejar.pdf",
                   "kind": "pdf"
                 },
                 {
                   "id": "upplysingaoryggisstefna",
                   "label": "Upplýsingaöryggisstefna",
-                  "href": "https://www.reykjanesbaer.is/static/files/pdf_skjol_allir/upplysingaoryggisstefna_samthykkt.pdf",
+                  "href": "https://reykjanesbaer.payload.is/api/media/file/upplysingaoryggisstefna-reykjanesbaejar.pdf",
                   "kind": "pdf"
                 },
                 {
                   "id": "vafrakokustefna",
                   "label": "Vafrakökustefna",
-                  "href": "https://www.reykjanesbaer.is/static/files/pdf_skjol_allir/vafrakokustefna_ny.pdf",
+                  "href": "https://reykjanesbaer.payload.is/api/media/file/vafrakokustefna-reykjanesbaejar.pdf",
                   "kind": "pdf"
                 },
                 {
                   "id": "atvinnustefna",
                   "label": "Atvinnustefna",
-                  "href": "https://www.reykjanesbaer.is/static/files/Reykjaneshofn/atvinnustefna_2025-2035.pdf",
+                  "href": "https://reykjanesbaer.payload.is/api/media/file/atvinnustefna-reykjanesbaejar.pdf",
                   "kind": "pdf"
                 },
                 {
                   "id": "vefstefna",
                   "label": "Vefstefna",
-                  "href": "https://www.reykjanesbaer.is/static/files/pdf_skjol_allir/2024/vefstefna-2024-2027.pdf",
+                  "href": "https://reykjanesbaer.payload.is/api/media/file/vefstefna-reykjanesbaejar.pdf",
                   "kind": "pdf"
                 }
               ]
@@ -108,26 +108,26 @@
                 {
                   "id": "ekko",
                   "label": "EKKO",
-                  "href": "https://www.reykjanesbaer.is/static/files/pdf_skjol_allir/2022/stefna-og-vidbragdsaaetlun-ekko-2022.pdf",
+                  "href": "https://reykjanesbaer.payload.is/api/media/file/ekko.pdf",
                   "kind": "pdf",
                   "note": "Stefna og viðbragðsáætlun gegn einelti, kynferðislegri áreitni, kynbundinni áreitni og ofbeldi"
                 },
                 {
                   "id": "jafnlaunastefna",
                   "label": "Jafnlaunastefna",
-                  "href": "https://www.reykjanesbaer.is/static/files/pdf_skjol_allir/2026/4.2-jafnlaunastefna-8.4.2026.pdf",
+                  "href": "https://reykjanesbaer.payload.is/api/media/file/jafnlaunastefna-reykjanesbaejar.pdf",
                   "kind": "pdf"
                 },
                 {
                   "id": "mannaudsstefna",
                   "label": "Mannauðsstefna",
-                  "href": "https://www.reykjanesbaer.is/static/files/pdf_skjol_allir/2023/september/mannaudsstefna_reykjanesbaejar.pdf",
+                  "href": "https://reykjanesbaer.payload.is/api/media/file/mannaudsstefna-reykjanesbaejar-1.pdf",
                   "kind": "pdf"
                 },
                 {
                   "id": "fraedslustefna",
                   "label": "Fræðslustefna",
-                  "href": "https://www.reykjanesbaer.is/static/files/pdf_skjol_allir/2025/fraedslustefna.pdf",
+                  "href": "https://reykjanesbaer.payload.is/api/media/file/fraedslustefna.pdf",
                   "kind": "pdf"
                 }
               ]
@@ -145,19 +145,19 @@
                 {
                   "id": "ferdamalastefna",
                   "label": "Ferðamálastefna",
-                  "href": "https://www.reykjanesbaer.is/static/files/pdf_skjol_allir/ferdamalastefna-reykjanesbaejar_nyrri.pdf",
+                  "href": "https://reykjanesbaer.payload.is/api/media/file/ferdamalastefna-reykjanesbaejar.pdf",
                   "kind": "pdf"
                 },
                 {
                   "id": "markadstefna",
                   "label": "Markaðstefna",
-                  "href": "https://www.reykjanesbaer.is/static/files/pdf_skjol_allir/2024/markadsstefna_2023_2028.pdf",
+                  "href": "https://reykjanesbaer.payload.is/api/media/file/markadsstefna.pdf",
                   "kind": "pdf"
                 },
                 {
                   "id": "menningarstefna",
                   "label": "Menningarstefna",
-                  "href": "https://www.reykjanesbaer.is/static/files/Stjornsyslusvid/Menning/menningarstefna_2020_2025.pdf",
+                  "href": "https://reykjanesbaer.payload.is/api/media/file/menningarstefna.pdf",
                   "kind": "pdf"
                 }
               ]
@@ -175,19 +175,19 @@
                 {
                   "id": "laesistefna",
                   "label": "Læsistefna",
-                  "href": "https://www.reykjanesbaer.is/static/files/pdf_skjol_allir/rnb-laesisstefna-2017.pdf",
+                  "href": "https://reykjanesbaer.payload.is/api/media/file/laesistefna-reykjanesbaejar.pdf",
                   "kind": "pdf"
                 },
                 {
                   "id": "menntastefna",
                   "label": "Menntastefna",
-                  "href": "https://www.reykjanesbaer.is/is/stjornsysla/stefnumotun/stefnur-og-samthykktir/menntastefna-reykjanesbaejar-2021-2030",
+                  "href": "https://www.reykjanesbaer.is/menntastefna-reykjanesbaejar",
                   "kind": "page"
                 },
                 {
                   "id": "tomstundastefna",
                   "label": "Tómstundastefna",
-                  "href": "https://www.reykjanesbaer.is/static/files/Fraedslusvid/tomstundastefna.pdf",
+                  "href": "https://reykjanesbaer.payload.is/api/media/file/tomstundastefna.pdf",
                   "kind": "pdf"
                 }
               ]
@@ -205,7 +205,7 @@
                 {
                   "id": "umhverfis-og-loftlagsstefna",
                   "label": "Umhverfis- og loftlagsstefna",
-                  "href": "https://www.reykjanesbaer.is/static/files/pdf_skjol_allir/2021/Juni/umhverfis_og_loftslagsstefna_reykjanesbaejar_2021.pdf",
+                  "href": "https://reykjanesbaer.payload.is/api/media/file/umhverfis-og-loftslagsstefna-reykjanesbaejar.pdf",
                   "kind": "pdf"
                 }
               ]
@@ -223,13 +223,13 @@
                 {
                   "id": "lydheilsustefna",
                   "label": "Lýðheilsustefna",
-                  "href": "https://www.reykjanesbaer.is/static/files/pdf_skjol_allir/2021/Juni/lydheilsustefan_2021.pdf",
+                  "href": "https://reykjanesbaer.payload.is/api/media/file/lydheilsustefna-reykjanesbaejar.pdf",
                   "kind": "pdf"
                 },
                 {
                   "id": "stefna-i-malefnum-eldri-borgara",
                   "label": "Stefna í málefnum eldri borgara",
-                  "href": "https://www.reykjanesbaer.is/static/files/pdf_skjol_allir/stefna-i-malefnum-eldri-borgara.pdf",
+                  "href": "https://reykjanesbaer.payload.is/api/media/file/stefna-i-malefnum-eldri-borgara.pdf",
                   "kind": "pdf"
                 }
               ]

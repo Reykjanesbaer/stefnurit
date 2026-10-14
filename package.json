@@ -28,7 +28,8 @@
     "validate:data": "node scripts/validate-document.mjs",
     "format:data": "node scripts/format-document.mjs",
     "assemble": "node scripts/assemble-pages.mjs",
-    "qa": "node scripts/visual-qa.mjs"
+    "qa": "node scripts/visual-qa.mjs",
+    "qa:diff": "node scripts/qa-diff.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.1",

@@ -16,13 +16,49 @@
 /**
  * Below this width the column tree gives way to a stacked rail.
  *
- * Set by the content, not by a device: "Upplýsingaöryggisstefna" needs about
- * 260 px to sit on one line at the body size, and five of those plus gaps and
- * page padding comes to roughly 1400. Chromium ships no Icelandic hyphenation
- * patterns, so a narrower column has to break compounds mid-syllable, which
- * reads far worse than stacking.
+ * Set by the content, not by a device. The binding measurement is
+ * "Upplýsingaöryggisstefna" with its external-link icon: at the body size it
+ * wants roughly 205 px of label, and five columns of that plus gaps and page
+ * padding is more than a 1366 px laptop has. Chromium ships no Icelandic
+ * hyphenation patterns, so a column narrower than the word has to break the
+ * compound mid-syllable.
+ *
+ * The threshold used to be 1400, which stacked every laptop made in the last
+ * decade. It is 1240 now because between 1240 and 1400 the columns survive on
+ * the design's own minimum spacing — see TIGHTEN_BELOW. Below 1240 they do not:
+ * labels start overflowing their cards rather than merely wrapping, which is
+ * the point where stacking is the better answer. Measured, not guessed:
+ * docs/qa/breakpoints/README.md has the numbers and the screenshots.
  */
-export const STACK_BELOW = 1400;
+export const STACK_BELOW = 1240;
+
+/**
+ * Between STACK_BELOW and this width, spacing drops to the design's own floors.
+ *
+ * Every token the band overrides is set to the low end of a clamp this file
+ * already declares, so nothing new is invented — a 1280 px laptop simply gets
+ * the padding a phone gets, which is what buys the fifth column.
+ *
+ * At and above this width not one pixel changes. That is a hard constraint, not
+ * a preference: the layout at 1400 px and up is the design that was signed off,
+ * and `npm run qa` diffs against it.
+ */
+export const TIGHTEN_BELOW = 1400;
+
+/**
+ * The token overrides that apply in the tightened band.
+ *
+ * Values, not a stylesheet, so the test suite can assert that each one is the
+ * floor of the clamp it replaces rather than an arbitrary smaller number.
+ */
+export const TIGHTENED = {
+  'page-padding-inline': '1rem',
+  'column-gap': '0.4rem',
+  'card-padding-inline': '0.9rem',
+  'card-padding-block': '0.85rem',
+  'backing-offset': '8px',
+  'backing-inset': '5px',
+};
 
 export const TOKENS = {
   // ---- colour (from the original, colour-picked; see docs/design-inventory.md)

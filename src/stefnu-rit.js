@@ -14,7 +14,7 @@
  * No dependencies, no build step required, no framework.
  */
 
-import { TOKENS, THEMEABLE, STACK_BELOW } from './tokens.js';
+import { TOKENS, THEMEABLE, STACK_BELOW, TIGHTEN_BELOW, TIGHTENED } from './tokens.js';
 import { FIGTREE_FACES } from './assets/fonts.js';
 import { validate } from './validate.js';
 import { routeTree, routeRail } from './lines.js';
@@ -270,6 +270,20 @@ a.pill:focus-visible {
   flex: none;
 }
 
+/* ---- tightened columns ------------------------------------------------------
+   A 1280 or 1366 px laptop has room for five columns, but not for five columns
+   plus the page padding and gaps the design uses at 1850. Rather than stack a
+   screen that is plainly wide enough, spacing drops to the floors declared in
+   tokens.js — the same values a phone gets — and the columns stay.
+
+   The band stops one pixel below TIGHTEN_BELOW. Above it nothing here applies,
+   which is what keeps the signed-off layout pixel-identical. */
+@container (min-width: ${STACK_BELOW}px) and (max-width: ${TIGHTEN_BELOW - 1}px) {
+  .root {
+${Object.entries(TIGHTENED).map(([name, value]) => `    --sr-${name}: ${value};`).join('\n')}
+  }
+}
+
 /* ---- stacked layout -------------------------------------------------------- */
 
 @container (max-width: ${STACK_BELOW - 1}px) {
@@ -298,6 +312,32 @@ a.pill:focus-visible {
   .col--inset { padding-block: 0; }
   .col--backed .card { margin-right: 0; }
   .card-backing { display: none; }
+}
+
+/* ---- unavailable and stale -------------------------------------------------- */
+
+.unavailable {
+  padding: 2rem 1.5rem;
+  text-align: center;
+  font-family: var(--sr-font-family);
+  color: #1B1B1F;
+}
+.unavailable-text { margin: 0 0 .75rem; font-size: 1.05rem; }
+.unavailable-hint { margin: 0; color: #515864; font-size: .95rem; }
+.unavailable-link {
+  display: inline-block; padding: .6rem 1.1rem; border-radius: 8px;
+  background: var(--sr-color-primary); color: #fff; text-decoration: none; font-weight: 600;
+}
+.unavailable-link:hover { filter: brightness(1.1); }
+.unavailable-debug {
+  margin: 1rem auto 0; max-width: 46rem; text-align: left; white-space: pre-wrap;
+  background: #F3F4F6; padding: .75rem; border-radius: 6px; font-size: .8rem; overflow-x: auto;
+}
+
+.stale-note {
+  margin: 0 0 1rem; padding: .5rem .75rem; border-radius: 6px;
+  background: #FFF8EC; border: 1px solid #E8D3A8; color: #5C3900;
+  font-family: var(--sr-font-family); font-size: .85rem; text-align: center;
 }
 
 /* ---- failure state ---------------------------------------------------------- */
@@ -339,11 +379,18 @@ function labelWithIcon(label, icon) {
   return `<span class="label">${esc(label)}&nbsp;${icon}</span>`;
 }
 
+/** Bumped by hand; exposed as element.version and printed in the bundle banner. */
+export const VERSION = '1.1.0';
+
+/** Where the last known-good document is kept, so an outage is not a blank page. */
+const CACHE_KEY = 'stefnurit-last-valid';
+
 export class StefnuRit extends HTMLElement {
-  static observedAttributes = ['src', 'target', 'theme'];
+  static observedAttributes = ['src', 'fallback-src', 'fallback-href', 'target', 'theme', 'debug'];
 
   #shadow;
   #config = null;
+  #stale = false;
   #resizeObserver = null;
   #frame = 0;
 
@@ -360,6 +407,9 @@ export class StefnuRit extends HTMLElement {
   }
 
   get target() { return this.getAttribute('target') || '_blank'; }
+
+  /** The build this element came from. */
+  get version() { return VERSION; }
 
   connectedCallback() {
     installPlaceholderStyle(this.ownerDocument);
@@ -404,52 +454,135 @@ export class StefnuRit extends HTMLElement {
     else this.#render();
   }
 
+  /**
+   * Load the document, with somewhere to fall back to.
+   *
+   * Three sources in order: `src`, then `fallback-src`, then the last document
+   * that was known good in this browser. A municipal page should not go blank
+   * because a JSON file 404s during a deploy, and it certainly should not show
+   * a resident an HTTP status code.
+   */
   async #load(src) {
-    try {
-      const response = await fetch(src, { credentials: 'same-origin' });
-      if (!response.ok) throw new Error(`HTTP ${response.status} ${response.statusText}`);
-      this.#config = await response.json();
-    } catch (error) {
-      this.#config = null;
-      this.#renderFallback(`Náði ekki í gögnin frá ${src}`, [String(error.message || error)]);
-      console.error('[stefnu-rit] could not load', src, error);
+    const sources = [src, this.getAttribute('fallback-src')].filter(Boolean);
+    const failures = [];
+
+    for (const [index, candidate] of sources.entries()) {
+      try {
+        const response = await fetch(candidate, { credentials: 'same-origin' });
+        if (!response.ok) throw new Error(`HTTP ${response.status} ${response.statusText}`);
+        const data = await response.json();
+
+        // Only a valid document is worth caching or rendering; a malformed one
+        // would overwrite the good copy that is currently saving the page.
+        const result = validate(data);
+        if (!result.ok) throw new Error(`skjalið stenst ekki skoðun: ${result.errors[0]}`);
+
+        this.#config = data;
+        this.removeAttribute('data-stale');
+        this.#cacheDocument(data);
+        if (index > 0) console.warn('[stefnu-rit] using fallback-src', candidate);
+        this.#render();
+        return;
+      } catch (error) {
+        failures.push(`${candidate}: ${error.message}`);
+        console.error('[stefnu-rit] could not load', candidate, error);
+      }
+    }
+
+    const cached = this.#readCache();
+    if (cached) {
+      console.warn('[stefnu-rit] every source failed; showing the last known good copy');
+      this.#config = cached;
+      this.setAttribute('data-stale', 'true');
+      this.#render({ stale: true });
       return;
     }
-    this.#render();
+
+    this.#renderFallback(failures);
   }
 
-  #render() {
+  #cacheDocument(data) {
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify({ at: new Date().toISOString(), data }));
+    } catch {
+      // Private windows, blocked site data and a full quota all throw here.
+      // None of them is a reason to fail the render.
+    }
+  }
+
+  #readCache() {
+    try {
+      const raw = localStorage.getItem(CACHE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      // Re-validate: the cache may predate a schema change.
+      return validate(parsed?.data).ok ? parsed.data : null;
+    } catch {
+      return null;
+    }
+  }
+
+  #render({ stale = false } = {}) {
     if (!this.#config) return;
+    this.#stale = stale;
 
     const result = validate(this.#config);
     for (const warning of result.warnings) console.warn('[stefnu-rit]', warning);
     if (!result.ok) {
       console.error('[stefnu-rit] stefnurit.json is not valid:\n  ' + result.errors.join('\n  '));
-      this.#renderFallback('Stefnuritið birtist ekki því gögnin eru gölluð.', result.errors);
+      this.#renderFallback(result.errors);
       return;
     }
 
     const data = this.#config;
     this.#shadow.innerHTML = `<style>${css}</style><style>${this.#themeCss(data.theme)}</style>${this.#markup(data)}`;
     this.setAttribute('data-ready', '');
+    this.#wireLinkEvents();
     this.#scheduleLines();
   }
 
-  #renderFallback(headline, details) {
+  /**
+   * What a resident sees when nothing could be loaded.
+   *
+   * No status codes, no JSON, no stack: those help nobody reading the page and
+   * make a municipal website look broken rather than briefly unavailable. The
+   * detail goes to the console, and into the DOM only with `debug` set.
+   */
+  #renderFallback(details = []) {
+    const href = this.getAttribute('fallback-href');
+    const debug = this.hasAttribute('debug');
+
     this.#shadow.innerHTML = `<style>${css}</style>
-      <div class="fallback" role="alert">
-        <h2>${esc(headline)}</h2>
-        <p>Hafðu samband við vefstjóra. Tæknilegar upplýsingar:</p>
-        <ul>${details.slice(0, 12).map((d) => `<li><code>${esc(d)}</code></li>`).join('')}</ul>
+      <div class="unavailable" role="status">
+        <p class="unavailable-text">Ekki tókst að sækja stefnuritið í augnablikinu.</p>
+        ${href
+          ? `<p><a class="unavailable-link" href="${esc(href)}" rel="noopener noreferrer">Skoða stefnur á vef bæjarins</a></p>`
+          : '<p class="unavailable-hint">Reyndu aftur eftir smá stund.</p>'}
+        ${debug && details.length
+          ? `<pre class="unavailable-debug">${esc(details.join('\n'))}</pre>`
+          : ''}
       </div>`;
+    this.setAttribute('data-ready', '');
+    for (const line of details) console.error('[stefnu-rit]', line);
   }
 
   /**
-   * Token precedence, lowest to highest: component defaults (in the
-   * stylesheet) < the JSON `theme` block (a later :host rule) < whatever the
-   * page sets inline on the element. Writing the defaults inline on .root
-   * instead would outrank the page and make `theme` the only way in.
+   * Announce clicks so a host page can count them without parsing the shadow
+   * DOM. `composed` is what lets the event cross the shadow boundary at all;
+   * without it a listener on <stefnu-rit> never sees anything.
    */
+  #wireLinkEvents() {
+    this.#shadow.querySelector('.root')?.addEventListener('click', (event) => {
+      const link = event.target.closest?.('a[href]');
+      if (!link) return;
+      this.dispatchEvent(new CustomEvent('sr-link-click', {
+        bubbles: true,
+        composed: true,
+        detail: { id: link.id, label: link.textContent.trim(), href: link.getAttribute('href') },
+      }));
+    });
+  }
+
   #themeCss(theme) {
     const overrides = Object.entries(theme || {}).filter(([name]) => {
       if (THEMEABLE.includes(name)) return true;
@@ -475,6 +608,7 @@ export class StefnuRit extends HTMLElement {
 
     return `<div class="root">
       <svg class="lines" aria-hidden="true" focusable="false"></svg>
+      ${this.#stale ? '<p class="stale-note" role="status">Sýni síðast vistaða útgáfu — ekki náðist samband við vefinn.</p>' : ''}
       <nav class="content" aria-label="${esc(data.title)}" ${data.lang ? `lang="${esc(data.lang)}"` : ''}>
         ${sections}
       </nav>

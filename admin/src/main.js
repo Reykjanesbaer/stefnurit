@@ -16,6 +16,8 @@ import { renderSaga } from './views/saga.js';
 import { renderHlekkir } from './views/hlekkir.js';
 import { renderAdgerdir } from './views/adgerdir.js';
 import { renderAdgangur } from './views/adgangur.js';
+import { renderStillingar } from './views/stillingar.js';
+import { renderHjalp } from './views/hjalp.js';
 import { formatDateTime } from './ui/format.js';
 
 const VIEWS = [
@@ -26,8 +28,8 @@ const VIEWS = [
   { id: 'hlekkir', render: renderHlekkir, label: 'Hlekkir' },
   { id: 'adgerdir', render: renderAdgerdir, label: 'Aðgerðir' },
   { id: 'adgangur', render: renderAdgangur, label: 'Aðgangur' },
-  { id: 'stillingar', label: 'Stillingar', minRole: 'editor' },
-  { id: 'hjalp', label: 'Hjálp' },
+  { id: 'stillingar', render: renderStillingar, label: 'Stillingar', minRole: 'editor' },
+  { id: 'hjalp', render: renderHjalp, label: 'Hjálp' },
 ];
 
 const ROLE_RANK = { viewer: 0, editor: 1, publisher: 2 };
