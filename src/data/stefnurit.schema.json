@@ -13,6 +13,12 @@
     "$schema": {
       "type": "string"
     },
+    "schemaVersion": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 1,
+      "description": "Document schema version. Absent means 1. src/migrate.js upgrades older documents on load."
+    },
     "title": {
       "type": "string",
       "minLength": 1,

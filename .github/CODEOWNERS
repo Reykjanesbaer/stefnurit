@@ -1,0 +1,12 @@
+# Every pull request asks @aron5109 for review automatically.
+#
+# This is a convenience, not the control: the branch ruleset on main is what
+# actually requires a pull request and a passing "stefnurit / validate" check.
+# See docs/setup-github.md for the ruleset, and for how to raise the required
+# approval count from 0 to 1 once a second administrator exists.
+* @aron5109
+
+# The content itself and the pipeline that publishes it.
+/src/data/            @aron5109
+/.github/workflows/   @aron5109
+/scripts/             @aron5109

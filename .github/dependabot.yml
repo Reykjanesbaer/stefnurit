@@ -1,0 +1,32 @@
+version: 2
+updates:
+  # Everything here is a devDependency — the widget itself ships with none — so
+  # the risk is to the build and test pipeline rather than to what residents
+  # load. Weekly is often enough, grouped so one pull request covers a batch.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '07:00'
+      timezone: Atlantic/Reykjavik
+    open-pull-requests-limit: 5
+    groups:
+      dev-dependencies:
+        patterns: ['*']
+        update-types: [minor, patch]
+    commit-message:
+      prefix: 'chore(deps)'
+
+  # Actions are pinned to commit SHAs, which means no automatic drift and also
+  # no automatic security fixes. Dependabot is what moves the pins.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '07:00'
+      timezone: Atlantic/Reykjavik
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: 'chore(actions)'

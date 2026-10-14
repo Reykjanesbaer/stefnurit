@@ -1,65 +1,108 @@
-name: Deploy demo to GitHub Pages
+# Build, monitor and publish the site.
+#
+# Runs on every push to main, weekly to re-check the links, and on demand from
+# the Actions tab (which is what the admin panel's "Athuga núna" button
+# triggers). The weekly run exists because the links rot on their own: the
+# documents move when the municipality reorganises its website, and nobody finds
+# out until a resident clicks one.
+name: pages
 
 on:
   push:
     branches: [main]
+  schedule:
+    # Mondays at 06:00 UTC. Deliberately before office hours so a broken link is
+    # already in the issue list when somebody sits down.
+    - cron: '0 6 * * 1'
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
+# One deploy at a time. Two overlapping runs would race on the Pages artifact,
+# and cancelling a half-finished deploy is worse than queueing.
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
-  test:
+  build:
+    name: build
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      issues: write # the link monitor keeps one "Bilaðir hlekkir" issue in step
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Check out
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          # assemble-pages.mjs rebuilds every past revision of the document from
+          # git history, so it needs all of it.
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
-      - run: npm test
-      # Built before the e2e run so tests/e2e/bundle.spec.js checks the real
-      # artifacts rather than skipping.
-      - run: npm run build
-      - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e
 
-  build-and-deploy:
-    needs: test
+      - name: Install
+        run: npm ci
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Validate the document
+        run: node scripts/validate-document.mjs
+
+      - name: Build the bundles
+        run: npm run build
+
+      - name: Check every link
+        # Monitoring must never block publishing: a municipal website being slow
+        # on a Monday morning is not a reason to stop deploying.
+        continue-on-error: true
+        run: node scripts/check-links.mjs
+
+      - name: Update the broken-links issue
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/sync-broken-link-issue.mjs
+
+      - name: Assemble the site
+        run: node scripts/assemble-pages.mjs --out _site
+
+      - name: Keep the link report with the run
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: link-status
+          path: data/link-status.json
+          if-no-files-found: ignore
+          retention-days: 90
+
+      - name: Configure Pages
+        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
+
+      - name: Upload the site
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+        with:
+          path: _site
+
+  deploy:
+    name: deploy
+    needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npm run build
-
-      # The demo pages load ../src/* directly, so the site needs src/ and the
-      # built bundle alongside demo/.
-      - name: Assemble the site
-        run: |
-          mkdir -p _site
-          cp -r demo _site/demo
-          cp -r src _site/src
-          cp -r dist _site/dist
-          cp -r docs _site/docs
-          printf '<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=demo/">\n' > _site/index.html
-
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: _site
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4

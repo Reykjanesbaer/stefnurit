@@ -1,0 +1,62 @@
+# The gate on every change to the stefnurit document.
+#
+# The workflow is named "stefnurit" and the job "validate" so the required
+# status check reads exactly "stefnurit / validate" in the branch ruleset.
+#
+# Deliberately `pull_request`, never `pull_request_target`: this checks out and
+# runs code from the pull request, so it must not have access to secrets or to a
+# writable token on an untrusted branch. The only elevated permission is
+# pull-requests: write, used to keep one comment up to date, and GitHub already
+# downgrades that to read for pull requests from forks.
+name: stefnurit
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Check out the pull request
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          # The link check diffs against the base branch, so it needs history.
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Validate the document
+        run: node scripts/validate-document.mjs
+
+      - name: Build
+        run: npm run build
+
+      - name: Check the links this pull request changes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: node scripts/check-changed-links.mjs --base ${{ github.base_ref }}
