@@ -48,6 +48,10 @@ export function createMockGitHub({ documentPath, port = 0 } = {}) {
     nextPullNumber: 1,
     // Forced conditions, set through /__mock/control.
     rateLimitRemaining: 4999,
+    checkPolls: 0,
+    checkSettlesAfter: 1,
+    checkConclusion: 'success',
+    dispatches: 0,
     forceRateLimit: false,
     forceServerError: false,
     /** Set to a document string to simulate somebody else committing first. */
@@ -67,6 +71,10 @@ export function createMockGitHub({ documentPath, port = 0 } = {}) {
         'access-control-allow-origin': '*',
         'access-control-allow-headers': '*',
         'access-control-allow-methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
+        // api.github.com exposes these; without them a browser cannot read the
+        // quota headers at all, which is how the client's 403 handling broke.
+        'access-control-expose-headers':
+          'etag, link, x-ratelimit-limit, x-ratelimit-remaining, x-ratelimit-reset',
         'x-ratelimit-limit': '5000',
         'x-ratelimit-remaining': String(state.rateLimitRemaining),
         'x-ratelimit-reset': String(Math.floor(Date.now() / 1000) + 1800),
@@ -85,9 +93,20 @@ export function createMockGitHub({ documentPath, port = 0 } = {}) {
     }
     if (path === '/__mock/reset') {
       state.branches = new Map([['main', { content: baseDocument, commit: sha(baseDocument + 'main') }]]);
+      // Commits accumulated across tests until this was added, so one test's
+      // history leaked into the next and "restore an old version" picked a
+      // commit that no longer resolved.
+      state.commits = [{
+        sha: sha(baseDocument + 'main'),
+        message: 'Uppfæra stefnurit',
+        author: 'AronG', login: 'aron5109',
+        date: '2026-10-01T09:15:00Z',
+      }];
       state.pulls = []; state.nextPullNumber = 1; state.forceRateLimit = false;
       state.forceServerError = false; state.concurrentWrite = null;
       state.rateLimitRemaining = 4999; state.requests = [];
+      state.checkPolls = 0; state.checkSettlesAfter = 1;
+      state.checkConclusion = 'success'; state.dispatches = 0;
       return send(200, { ok: true });
     }
     if (path === '/__mock/state') {
@@ -95,6 +114,8 @@ export function createMockGitHub({ documentPath, port = 0 } = {}) {
         branches: [...state.branches.keys()],
         pulls: state.pulls,
         requests: state.requests,
+        dispatches: state.dispatches,
+        mainContent: state.branches.get('main')?.content ?? null,
       });
     }
 
@@ -220,6 +241,102 @@ export function createMockGitHub({ documentPath, port = 0 } = {}) {
         commit: { message: commit.message, author: { name: commit.author, date: commit.date } },
         author: { login: commit.login },
       });
+    }
+
+    // ---- pull requests ------------------------------------------------------
+    if (path === `${repoBase}/pulls`) {
+      if (req.method === 'GET') {
+        const wanted = url.searchParams.get('head')?.split(':').pop();
+        const wantedState = url.searchParams.get('state') ?? 'open';
+        return send(200, state.pulls.filter((pull) =>
+          (wantedState === 'all' || pull.state === wantedState)
+          && (!wanted || pull.head.ref === wanted)));
+      }
+      if (req.method === 'POST') {
+        if (!user.permissions.push) return send(403, { message: 'Resource not accessible by personal access token' });
+        const body = await readBody(req);
+        const head = state.branches.get(body.head);
+        const pull = {
+          number: state.nextPullNumber++,
+          title: body.title,
+          body: body.body,
+          state: 'open',
+          merged_at: null,
+          merge_commit_sha: null,
+          mergeable: true,
+          mergeable_state: 'clean',
+          user: { login: user.login },
+          head: { ref: body.head, sha: head?.commit ?? 'unknown' },
+          base: { ref: body.base },
+          html_url: `https://github.com/${OWNER}/${REPO}/pull/${state.nextPullNumber - 1}`,
+        };
+        state.pulls.push(pull);
+        return send(201, pull);
+      }
+    }
+
+    const pullMatch = /^\/repos\/[^/]+\/[^/]+\/pulls\/(\d+)(\/merge)?$/.exec(path);
+    if (pullMatch) {
+      const number = Number(pullMatch[1]);
+      const pull = state.pulls.find((p) => p.number === number);
+      if (!pull) return send(404, { message: 'Not Found' });
+
+      if (!pullMatch[2] && req.method === 'GET') {
+        // Keep the head sha current: the editor may have pushed again.
+        const head = state.branches.get(pull.head.ref);
+        if (head) pull.head.sha = head.commit;
+        return send(200, pull);
+      }
+      if (!pullMatch[2] && req.method === 'PATCH') {
+        Object.assign(pull, await readBody(req));
+        return send(200, pull);
+      }
+      if (pullMatch[2] && req.method === 'PUT') {
+        if (!user.permissions.admin && !user.permissions.maintain) {
+          return send(403, { message: 'Resource not accessible by personal access token' });
+        }
+        if (state.checkConclusion !== 'success') {
+          return send(405, { message: 'Required status check "stefnurit / validate" is expected.' });
+        }
+        const body = await readBody(req);
+        const draft = state.branches.get(pull.head.ref);
+        const main = state.branches.get('main');
+        main.content = draft.content;
+        main.commit = sha(main.content + Date.now());
+        pull.state = 'closed';
+        pull.merged_at = new Date().toISOString();
+        pull.merge_commit_sha = main.commit;
+        state.commits.unshift({
+          sha: main.commit, message: body.commit_title ?? pull.title,
+          author: user.name, login: user.login, date: pull.merged_at,
+        });
+        return send(200, { sha: main.commit, merged: true });
+      }
+    }
+
+    // ---- check runs ---------------------------------------------------------
+    const checksMatch = /^\/repos\/[^/]+\/[^/]+\/commits\/([^/]+)\/check-runs$/.exec(path);
+    if (checksMatch && req.method === 'GET') {
+      state.checkPolls += 1;
+      // The first poll reports "running" so the UI's waiting state is exercised.
+      const settled = state.checkPolls > (state.checkSettlesAfter ?? 1);
+      return send(200, {
+        total_count: 1,
+        check_runs: [{
+          name: 'validate',
+          status: settled ? 'completed' : 'in_progress',
+          conclusion: settled ? (state.checkConclusion ?? 'success') : null,
+          html_url: `https://github.com/${OWNER}/${REPO}/runs/1`,
+          output: { title: settled ? 'Allt í lagi' : 'Keyrir…' },
+        }],
+      });
+    }
+
+    // ---- workflow dispatch --------------------------------------------------
+    if (/\/actions\/workflows\/[^/]+\/dispatches$/.test(path) && req.method === 'POST') {
+      if (!user.permissions.admin) return send(403, { message: 'Resource not accessible by personal access token' });
+      state.dispatches += 1;
+      return send(204, null);
     }
 
     // ---- collaborators ------------------------------------------------------

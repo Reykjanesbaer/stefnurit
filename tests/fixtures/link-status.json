@@ -1,0 +1,31 @@
+{
+  "generatedAt": "2026-10-13T06:04:00.000Z",
+  "summary": { "total": 6, "ok": 3, "redirect": 1, "broken": 1, "unknown": 1, "empty": 0, "changedDocuments": 1 },
+  "links": [
+    { "id": "innkaupastefna", "label": "Innkaupastefna", "href": "https://www.reykjanesbaer.is/a.pdf",
+      "outcome": "ok", "status": 200, "finalUrl": "https://www.reykjanesbaer.is/a.pdf",
+      "contentType": "application/pdf", "size": 524288, "lastModified": "Mon, 06 Jan 2025 10:00:00 GMT",
+      "checkedAt": "2026-10-13T06:04:00.000Z", "consecutiveFailures": 0, "lastModifiedChanged": false, "previousLastModified": null },
+    { "id": "personuverndarstefna", "label": "Persónuverndarstefna", "href": "https://www.reykjanesbaer.is/b.pdf",
+      "outcome": "broken", "status": 404, "finalUrl": "https://www.reykjanesbaer.is/b.pdf",
+      "contentType": null, "size": null, "lastModified": null,
+      "checkedAt": "2026-10-13T06:04:00.000Z", "consecutiveFailures": 2, "lastModifiedChanged": false, "previousLastModified": null },
+    { "id": "vafrakokustefna", "label": "Vafrakökustefna", "href": "https://www.reykjanesbaer.is/c.pdf",
+      "outcome": "redirect", "status": 200, "finalUrl": "https://www.reykjanesbaer.is/c-nytt.pdf",
+      "contentType": "application/pdf", "size": 102400, "lastModified": "Tue, 07 Jan 2025 10:00:00 GMT",
+      "checkedAt": "2026-10-13T06:04:00.000Z", "consecutiveFailures": 0, "lastModifiedChanged": false, "previousLastModified": null },
+    { "id": "atvinnustefna", "label": "Atvinnustefna", "href": "https://www.reykjanesbaer.is/d.pdf",
+      "outcome": "unknown", "status": 403, "finalUrl": "https://www.reykjanesbaer.is/d.pdf",
+      "contentType": null, "size": null, "lastModified": null,
+      "checkedAt": "2026-10-13T06:04:00.000Z", "consecutiveFailures": 1, "lastModifiedChanged": false, "previousLastModified": null },
+    { "id": "vefstefna", "label": "Vefstefna", "href": "https://www.reykjanesbaer.is/e.pdf",
+      "outcome": "ok", "status": 200, "finalUrl": "https://www.reykjanesbaer.is/e.pdf",
+      "contentType": "application/pdf", "size": 2097152, "lastModified": "Fri, 10 Oct 2026 08:00:00 GMT",
+      "checkedAt": "2026-10-13T06:04:00.000Z", "consecutiveFailures": 0, "lastModifiedChanged": true,
+      "previousLastModified": "Mon, 06 Jan 2025 10:00:00 GMT" },
+    { "id": "ekko", "label": "EKKO", "href": "https://www.reykjanesbaer.is/f.pdf",
+      "outcome": "ok", "status": 200, "finalUrl": "https://www.reykjanesbaer.is/f.pdf",
+      "contentType": "application/pdf", "size": 51200, "lastModified": "Wed, 08 Jan 2025 10:00:00 GMT",
+      "checkedAt": "2026-10-13T06:04:00.000Z", "consecutiveFailures": 0, "lastModifiedChanged": false, "previousLastModified": null }
+  ]
+}
