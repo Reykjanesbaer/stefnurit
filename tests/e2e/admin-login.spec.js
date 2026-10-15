@@ -172,6 +172,58 @@ test.describe('security', () => {
     expect(await page.evaluate(() => JSON.stringify(Object.entries(localStorage)))).toBe('[]');
   });
 
+  test('a remembered token survives a reload in the same tab', async ({ page }) => {
+    await page.goto('/admin/');
+    await page.getByLabel(/Aðgangslykill/).fill('test-token-publisher');
+    await page.getByLabel(/Muna á þessu tæki/).check();
+    await page.getByRole('button', { name: 'Skrá inn' }).click();
+    await expect(page.getByRole('heading', { name: 'Yfirlit' })).toBeVisible();
+
+    await page.reload();
+    await expect(page.getByRole('heading', { name: 'Yfirlit' })).toBeVisible();
+    await expect(page.getByLabel(/Aðgangslykill/)).toHaveCount(0);
+  });
+
+  test('a server hiccup on reload does not make a remembered token forgotten', async ({ page }) => {
+    await page.goto('/admin/');
+    await page.getByLabel(/Aðgangslykill/).fill('test-token-publisher');
+    await page.getByLabel(/Muna á þessu tæki/).check();
+    await page.getByRole('button', { name: 'Skrá inn' }).click();
+    await expect(page.getByRole('heading', { name: 'Yfirlit' })).toBeVisible();
+
+    await fetch(`${mockOrigin}/__mock/control`, {
+      method: 'POST', body: JSON.stringify({ forceServerError: true }),
+    });
+    await page.reload();
+    await expect(page.getByRole('heading', { name: 'Skrá inn' })).toBeVisible();
+    expect(await page.evaluate(() => sessionStorage.getItem('stefnurit-token'))).toBe('test-token-publisher');
+
+    // The service comes back; one more reload and the person is simply in.
+    await fetch(`${mockOrigin}/__mock/control`, {
+      method: 'POST', body: JSON.stringify({ forceServerError: false }),
+    });
+    await page.reload();
+    await expect(page.getByRole('heading', { name: 'Yfirlit' })).toBeVisible();
+  });
+
+  test('a token GitHub rejects is forgotten on reload', async ({ page }) => {
+    await page.goto('/admin/');
+    await page.evaluate(() => sessionStorage.setItem('stefnurit-token', 'test-token-expired'));
+    await page.reload();
+    await expect(page.getByRole('alert')).toBeVisible();
+    expect(await page.evaluate(() => sessionStorage.getItem('stefnurit-token'))).toBeNull();
+  });
+
+  test('the form is shaped so a password manager will offer to save the token', async ({ page }) => {
+    await page.goto('/admin/');
+    const form = page.locator('form.login-form');
+    await expect(form.locator('input[type=password]')).toHaveAttribute('autocomplete', 'current-password');
+    await expect(form.locator('input[autocomplete=username]')).toHaveCount(1);
+    // The username is bookkeeping for the browser, not a control.
+    await expect(form.locator('input[autocomplete=username]')).toHaveAttribute('aria-hidden', 'true');
+    await expect(form.locator('input[autocomplete=username]')).toHaveAttribute('tabindex', '-1');
+  });
+
   test('the token never appears in any URL', async ({ page }) => {
     const urls = [];
     page.on('request', (request) => urls.push(request.url()));

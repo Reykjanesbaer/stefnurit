@@ -42,19 +42,28 @@ const app = document.getElementById('app');
 const config = await loadConfig();
 update({ config });
 
+// Subscribed before the boot sign-in, not after it. The sign-in below awaits
+// the network and calls update() as it goes; with the subscription placed
+// after it, a remembered token signed in fine and then nothing ever drew the
+// panel — the page sat on "Hleð stjórnborðinu…" until somebody gave up and
+// typed the token again. renderApp() returns early until there is an identity,
+// so listening this soon costs nothing.
+subscribe(renderApp);
+
 const stored = tokenStore.get();
 if (stored) {
   await signIn(stored, { remember: tokenStore.isRemembered }).catch((error) => {
-    // A remembered token that has since expired must not trap anybody on a
-    // broken screen; drop it and show the login form with the reason.
-    tokenStore.clear();
+    // A token GitHub has rejected must not trap anybody on a broken screen;
+    // drop it and show the login form with the reason. Anything else — a
+    // dropped connection, a 502, an exhausted quota — says nothing about the
+    // token, and forgetting it would turn a hiccup into "create a new token".
+    const rejected = error instanceof GitHubError && error.kind === ERROR_KIND.UNAUTHORIZED;
+    if (rejected) tokenStore.clear();
     showLogin(error.message);
   });
 } else {
   showLogin(null);
 }
-
-subscribe(renderApp);
 
 /**
  * site.config.json is copied into the build next to index.html, so it is always
