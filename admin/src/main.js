@@ -19,6 +19,8 @@ import { renderAdgangur } from './views/adgangur.js';
 import { renderStillingar } from './views/stillingar.js';
 import { renderHjalp } from './views/hjalp.js';
 import { formatDateTime } from './ui/format.js';
+import { buildSnippets } from './embed-snippets.js';
+import { copyText } from './ui/clipboard.js';
 
 const VIEWS = [
   { id: 'yfirlit', label: 'Yfirlit', render: renderYfirlit },
@@ -168,6 +170,13 @@ function renderHeader() {
         el('span', { class: 'app-user-name', text: identity.name }),
         el('span', { class: 'app-user-role', text: ROLE_LABEL_IS[identity.role], title: ROLE_DESCRIPTION_IS[identity.role] }),
       ]),
+      // Open to every role, viewers included: it copies a public address, not
+      // anything this person's token can reach.
+      el('button', {
+        class: 'ghost', id: 'afrita-iframe', text: 'Afrita iframe',
+        title: 'Afritar kóða til að setja ritið inn í Payload eða aðra vefsíðu',
+        on: { click: copyIframe },
+      }),
       el('button', {
         class: 'ghost', text: 'Skrá út',
         on: {
@@ -183,6 +192,41 @@ function renderHeader() {
       }),
     ]),
   ]);
+}
+
+/**
+ * The shortcut: put the iframe code on the clipboard in one click.
+ *
+ * If the browser refuses the clipboard, the code is shown selected instead, so
+ * the worst case is Ctrl+C rather than a dead button.
+ */
+async function copyIframe(event) {
+  const button = event.currentTarget;
+  const { iframe } = buildSnippets(state.config);
+
+  if (await copyText(iframe)) {
+    button.textContent = 'Afritað ✓';
+    announce('iframe-kóðinn er afritaður. Límdu hann þar sem ritið á að birtast.');
+    setTimeout(() => { button.textContent = 'Afrita iframe'; }, 2500);
+    return;
+  }
+
+  document.getElementById('iframe-vara')?.remove();
+  const area = el('textarea', {
+    id: 'iframe-vara-kodi', readonly: true, rows: 7, spellcheck: false, class: 'mono',
+    'aria-label': 'iframe-kóði til að afrita', value: iframe,
+  });
+  const box = el('div', { id: 'iframe-vara', class: 'banner banner--info', role: 'status' }, [
+    el('div', { class: 'banner-body' }, [
+      el('strong', { text: 'Vafrinn leyfði ekki að afrita sjálfkrafa' }),
+      el('span', { text: 'Kóðinn er valinn hér fyrir neðan — afritaðu hann með Ctrl+C.' }),
+      area,
+    ]),
+    el('button', { class: 'ghost', text: 'Loka', on: { click: () => box.remove() } }),
+  ]);
+  document.querySelector('.app-nav')?.after(box);
+  area.focus();
+  area.select();
 }
 
 function renderNav(current) {

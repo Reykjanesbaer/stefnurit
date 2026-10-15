@@ -61,38 +61,72 @@ The event bubbles and is `composed`, so a listener on an ancestor works too.
 
 ## 2. Iframe
 
-Use this when the CMS will not run third-party script at all.
+Use this when the CMS will not run third-party script at all — Payload's
+embed/HTML blocks are the usual case.
+
+**The quick way:** sign in to the admin panel and press **Afrita iframe** in the
+header. It copies the code below to the clipboard, ready to paste. Stillingar →
+*Innfelling* has the same code, plus the variants and a height field.
 
 ```html
 <iframe
-  id="stefnurit"
-  src="https://reykjanesbaer.github.io/stefnurit/embed/frame.html?parent=https://www.reykjanesbaer.is"
+  src="https://reykjanesbaer.github.io/stefnurit/embed/frame.html"
   title="Stefnurit Reykjanesbæjar"
+  width="100%" height="1000"
   loading="lazy"
-  style="width:100%;border:0;height:900px"></iframe>
+  style="border:0;width:100%;max-width:100%"></iframe>
+```
 
+The addresses come from [`site.config.json`](../site.config.json) through
+`admin/src/embed-snippets.js`; a test checks that every path in them exists.
+
+### Height
+
+An iframe cannot size itself to its content, so the plain snippet has a fixed
+height. Measured: about **940 px** with five columns (1240 px and wider) and about
+**1400 px** once the layout stacks (narrower). `1000` suits a wide column; raise
+it to about `1450` when the page that shows it is narrow, or the frame will
+scroll inside itself.
+
+For automatic height, the page must run a small script. Stillingar offers that
+variant too:
+
+```html
+<iframe id="stefnurit-rammi" src="https://reykjanesbaer.github.io/stefnurit/embed/frame.html"
+  title="Stefnurit Reykjanesbæjar" width="100%" height="1000" loading="lazy"
+  style="border:0;width:100%;max-width:100%"></iframe>
 <script>
-  // The frame cannot resize itself, so it posts its height. Check the origin:
-  // without that check any page could post a message and resize your iframe.
   window.addEventListener('message', function (event) {
+    // Check who sent it: without this any page could resize your iframe.
     if (event.origin !== 'https://reykjanesbaer.github.io') return;
+    var frame = document.getElementById('stefnurit-rammi');
+    if (!frame || event.source !== frame.contentWindow) return;
     if (!event.data || event.data.type !== 'stefnu-rit:height') return;
-
-    var frame = document.getElementById('stefnurit');
     var height = Number(event.data.height);
-    if (frame && height > 0 && height < 20000) {
-      frame.style.height = height + 'px';
-    }
+    if (height > 0 && height < 20000) frame.style.height = height + 'px';
   });
 </script>
 ```
 
-The `?parent=` value must be listed in
-[`embed/embed-config.json`](../embed/embed-config.json). An unlisted origin gets
-no messages at all — the frame still renders, it simply will not resize itself.
-Add new sites to that file and publish; it is part of the normal review flow.
+### Who the frame talks to
 
-Height messages are posted to that exact origin, never to `'*'`.
+The frame reports its height only to a page whose origin is listed in
+[`embed/embed-config.json`](../embed/embed-config.json), and it learns that
+origin from the browser's own `Referer`. A page that is not listed still gets a
+working widget; it simply is not told the height. Messages go to that exact
+origin, never to `'*'`.
+
+**Add the site that shows the iframe to `allowedParentOrigins`** before relying on
+automatic height. The list ships with `https://www.reykjanesbaer.is` and
+`https://reykjanesbaer.is`; if Payload renders pages on another host, add it and
+publish. A `?parent=` query parameter is still honoured, but only for a listed
+origin, so it cannot be used to redirect the messages.
+
+> **Not verified against the live site.** The tests drive a real iframe on a
+> host page — one allowlisted origin that is resized, two unlisted ones that get
+> nothing — but the frame has not yet been loaded from inside Payload itself.
+> Whether Payload's editor keeps an `<iframe>` or strips it depends on how that
+> field is configured; check in a draft before publishing.
 
 ## Content Security Policy on the host page
 
