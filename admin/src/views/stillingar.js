@@ -355,7 +355,7 @@ export function renderStillingar(root, { state, onNavigate }) {
       el('p', { class: 'hint', text: 'Afritaðu þann kóða sem passar vefsíðunni og límdu hann þar sem ritið á að birtast. '
         + 'Sama kóða má afrita með hnappinum „Afrita iframe“ efst á hverri síðu.' }),
       field('innfelling-haed', 'Hæð rammans í punktum', heightInput,
-        `Á tölvuskjá er ritið um 940 punkta hátt, en undir 1240 punkta breidd raðast það upp og þarf um ${STACKED_HEIGHT}. `
+        `Frá 923 punkta breidd er ritið um 940 punkta hátt, en undir 923 punkta breidd raðast það upp og þarf um ${STACKED_HEIGHT}. `
         + 'Rammi með fastri hæð veit ekki hvort verður, svo veldu hærri töluna ef síðan er mjó. '
         + 'Fyrir sjálfvirka hæð: notaðu seinni kóðann hér fyrir neðan.'),
       make('Rammi (iframe) — líma beint',

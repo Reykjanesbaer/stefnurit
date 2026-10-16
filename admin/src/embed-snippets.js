@@ -15,7 +15,7 @@
 export const DEFAULT_HEIGHT = 1000;
 
 /**
- * The layout stacks below 1240px and then needs about 1400px. A frame with a
+ * The layout stacks below 923px and then needs about 1400px. A frame with a
  * fixed height cannot know which one it will get; this is the number to raise
  * it to when the page that shows it is narrow.
  */
