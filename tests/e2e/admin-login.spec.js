@@ -208,6 +208,10 @@ test.describe('security', () => {
 
   test('a token GitHub rejects is forgotten on reload', async ({ page }) => {
     await page.goto('/admin/');
+    // Wait for the first boot to finish before planting anything. Planting the
+    // token while that boot is still reading storage lets it consume (and clear)
+    // the token itself, and the reload then has nothing left to reject.
+    await page.getByLabel(/Aðgangslykill/).waitFor();
     await page.evaluate(() => sessionStorage.setItem('stefnurit-token', 'test-token-expired'));
     await page.reload();
     await expect(page.getByRole('alert')).toBeVisible();

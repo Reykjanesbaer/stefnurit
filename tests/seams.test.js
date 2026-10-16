@@ -61,8 +61,8 @@ describe('seams', () => {
 });
 
 describe('layout thresholds', () => {
-  it('are ordered, and the stack starts at the width a real page gives', () => {
-    expect(STACK_BELOW).toBe(923);
+  it('are ordered, and the stack starts where the tree stops fitting', () => {
+    expect(STACK_BELOW).toBe(700);
     expect(STACK_BELOW).toBeLessThan(COMPACT_BELOW);
     expect(COMPACT_BELOW).toBeLessThan(TIGHTEN_BELOW);
     expect(TIGHTEN_BELOW).toBe(1400);

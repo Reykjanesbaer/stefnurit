@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import {
   buildSnippets, clampHeight, embedUrls, publishedPaths, DEFAULT_HEIGHT,
 } from '../admin/src/embed-snippets.js';
+import { STACK_BELOW } from '../src/tokens.js';
 
 const config = JSON.parse(readFileSync(new URL('../site.config.json', import.meta.url), 'utf8'));
 const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
@@ -71,5 +72,35 @@ describe('embed snippets', () => {
     // The *frame's* origin is not a parent. Guard against confusing the two.
     expect(embedConfig.allowedParentOrigins).not.toContain(embedUrls(config).origin.replace('github.io', 'x'));
     expect(Array.isArray(embedConfig.allowedParentOrigins)).toBe(true);
+  });
+
+  it('keep the desktop tree on a narrow page by default: a minimum width and a scroll wrapper', () => {
+    for (const key of ['iframe', 'iframeAuto']) {
+      const snippet = buildSnippets(config)[key];
+      expect(snippet, key).toContain(`min-width:${STACK_BELOW}px`);
+      expect(snippet, key).toContain('<div style="overflow-x:auto">');
+      expect(snippet, key).toContain('max-width:none');
+    }
+  });
+
+  it('take the minimum width from the widget, so the two cannot drift apart', () => {
+    expect(buildSnippets(config).iframe).toContain(`min-width:${STACK_BELOW}px`);
+    expect(STACK_BELOW).toBe(700);
+  });
+
+  it('let the frame follow its container when asked to', () => {
+    for (const key of ['iframe', 'iframeAuto']) {
+      const snippet = buildSnippets(config, { keepDesktop: false })[key];
+      expect(snippet, key).not.toContain('min-width');
+      expect(snippet, key).not.toContain('overflow-x');
+      expect(snippet, key).toContain('max-width:100%');
+    }
+  });
+
+  it('wrap exactly one frame, so the auto-height script still finds it', () => {
+    const snippet = buildSnippets(config).iframeAuto;
+    expect(snippet.match(/<iframe/g)).toHaveLength(1);
+    expect(snippet).toContain('id="stefnurit-rammi"');
+    expect(snippet.indexOf('</div>')).toBeLessThan(snippet.indexOf('<script>'));
   });
 });

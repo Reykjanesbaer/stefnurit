@@ -15,24 +15,26 @@ export it started from. What is checked here is what the layout rules promise.
 | 1240px | 1240px — the narrowest tightened row — five columns, tightened | 856px | 16.664px | 185px in 212px | 1×trunk, 1×branch, 1×rail, 5×tick | ok |
 | 1200px | compact band — five columns, compact | 791px | 16.56px | 184px in 225px | 1×trunk, 1×branch, 1×rail, 5×tick | ok |
 | 1100px | compact band — five columns, compact | 796px | 16.3px | 181px in 205px | 1×trunk, 1×branch, 1×rail, 5×tick | ok |
-| 923px | 923px — the narrowest five-column width — five columns, compact | 833px | 15.8398px | 176px in 170px | 1×trunk, 1×branch, 1×rail, 5×tick | ok |
-| 922px | one pixel narrower: stacked — stacked | 1339px | 15.8372px | 176px in 678px | 1×rail, 9×tick | ok |
-| 768px | stacked — stacked | 1315px | 15.4368px | 171px in 664px | 1×rail, 9×tick | ok |
+| 923px | a common page column — five columns, compact | 833px | 15.8398px | 176px in 170px | 1×trunk, 1×branch, 1×rail, 5×tick | ok |
+| 785px | a narrow browser window — five columns, compact | 877px | 15.481px | 172px in 142px | 1×trunk, 1×branch, 1×rail, 5×tick | ok |
+| 768px | a tablet — five columns, compact | 897px | 15.4368px | 171px in 139px | 1×trunk, 1×branch, 1×rail, 5×tick | ok |
+| 700px | 700px — the narrowest five-column width — five columns, compact | 976px | 15.26px | 170px in 125px | 1×trunk, 1×branch, 1×rail, 5×tick | ok |
+| 699px | one pixel narrower: stacked — stacked | 1307px | 15.2574px | 170px in 599px | 1×rail, 9×tick | ok |
 | 390px | stacked — stacked | 1296px | 15px | 167px in 300px | 1×rail, 9×tick | ok |
 
 Body text never drops below 15px: the type scale is fluid between a readable
 floor and the size the original used at full width, rather than shrinking in
 proportion to the widget.
 
-The column tree is used from 923px up. Spacing steps down in three
+The column tree is used from 700px up. Spacing steps down in three
 regimes so the five columns fit:
 
 | Width | Spacing |
 |---|---|
 | 1400px and up | the signed-off design, frozen (`npm run qa:diff`) |
 | 1240–1399px | the clamps' own floors (`TIGHTENED`) |
-| 923–1239px | edge to edge, 0.15px page padding (`COMPACT`) |
-| below 923px | stacked, with the rail in its own gutter |
+| 700–1239px | edge to edge, 0.15px page padding (`COMPACT`) |
+| below 700px | stacked, with the rail in its own gutter |
 
 Chromium has no Icelandic hyphenation patterns, so a long compound in a narrow
 column would be broken mid-syllable. Words may instead break at their seams
@@ -55,7 +57,9 @@ why it breaks at its seams there instead of anywhere at all.
 - `band-floor-1240.png` — 1240px — the narrowest tightened row — five columns, tightened
 - `narrow-1200.png` — compact band — five columns, compact
 - `compact-1100.png` — compact band — five columns, compact
-- `narrow-tree-923.png` — 923px — the narrowest five-column width — five columns, compact
-- `narrow-stack-922.png` — one pixel narrower: stacked — stacked
-- `tablet-768.png` — stacked — stacked
+- `narrow-tree-923.png` — a common page column — five columns, compact
+- `tablet-wide-785.png` — a narrow browser window — five columns, compact
+- `tablet-768.png` — a tablet — five columns, compact
+- `narrowest-tree-700.png` — 700px — the narrowest five-column width — five columns, compact
+- `narrow-stack-699.png` — one pixel narrower: stacked — stacked
 - `phone-390.png` — stacked — stacked

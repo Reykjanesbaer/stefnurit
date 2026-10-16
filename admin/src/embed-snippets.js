@@ -10,12 +10,13 @@
  * Pure: no DOM, no network. That is what lets the tests check the snippets
  * against the files the site actually publishes.
  */
+import { STACK_BELOW } from '../../src/tokens.js';
 
 /** Tall enough for the five-column layout (about 940px) with room to spare. */
 export const DEFAULT_HEIGHT = 1000;
 
 /**
- * The layout stacks below 923px and then needs about 1400px. A frame with a
+ * The layout stacks below STACK_BELOW (700px) and then needs about 1400px. A frame with a
  * fixed height cannot know which one it will get; this is the number to raise
  * it to when the page that shows it is narrow.
  */
@@ -60,35 +61,51 @@ export function publishedPaths(config) {
 
 /**
  * @param {object} config  site.config.json
- * @param {{height?: number}} [options]
+ * @param {{height?: number, keepDesktop?: boolean}} [options]
+ *   keepDesktop (default true) holds the five-column look on a narrow page: the
+ *   frame never gets narrower than STACK_BELOW and the page scrolls it sideways
+ *   instead. Without it the frame follows its container and stacks below that.
  */
-export function buildSnippets(config, { height = DEFAULT_HEIGHT } = {}) {
+export function buildSnippets(config, { height = DEFAULT_HEIGHT, keepDesktop = true } = {}) {
   const urls = embedUrls(config);
   const px = clampHeight(height);
+
+  // The width the tree needs is the same number the widget stacks at, so the two
+  // can never drift apart.
+  const style = keepDesktop
+    ? `border:0;width:100%;min-width:${STACK_BELOW}px;max-width:none`
+    : 'border:0;width:100%;max-width:100%';
+  // A frame held wider than its page needs somewhere to scroll; the wrapper is
+  // that place, so the page itself does not gain a horizontal scrollbar.
+  const wrap = (lines) => (keepDesktop
+    ? ['<div style="overflow-x:auto">', ...lines.map((line) => `  ${line}`), '</div>']
+    : lines);
 
   // No ?parent= here. The frame learns who is showing it from the browser's own
   // Referer, which cannot be set by a link someone crafted, and only talks to
   // origins listed in embed/embed-config.json.
-  const iframe = [
+  const iframe = wrap([
     '<iframe',
     `  src="${urls.frame}"`,
     '  title="Stefnurit Reykjanesbæjar"',
     `  width="100%" height="${px}"`,
     '  loading="lazy"',
-    '  style="border:0;width:100%;max-width:100%"></iframe>',
-  ].join('\n');
+    `  style="${style}"></iframe>`,
+  ]).join('\n');
 
   // For a page that can run a script: the frame reports its height and the page
   // resizes it. The origin and source checks are not optional — without them any
   // page could post a message and resize this one.
   const iframeAuto = [
-    '<iframe',
-    '  id="stefnurit-rammi"',
-    `  src="${urls.frame}"`,
-    '  title="Stefnurit Reykjanesbæjar"',
-    `  width="100%" height="${px}"`,
-    '  loading="lazy"',
-    '  style="border:0;width:100%;max-width:100%"></iframe>',
+    ...wrap([
+      '<iframe',
+      '  id="stefnurit-rammi"',
+      `  src="${urls.frame}"`,
+      '  title="Stefnurit Reykjanesbæjar"',
+      `  width="100%" height="${px}"`,
+      '  loading="lazy"',
+      `  style="${style}"></iframe>`,
+    ]),
     '<script>',
     "  window.addEventListener('message', function (event) {",
     `    if (event.origin !== '${urls.origin}') return;`,
@@ -109,5 +126,5 @@ export function buildSnippets(config, { height = DEFAULT_HEIGHT } = {}) {
     `            fallback-href="${urls.base}/"></stefnu-rit>`,
   ].join('\n');
 
-  return { iframe, iframeAuto, element, urls, height: px };
+  return { iframe, iframeAuto, element, urls, height: px, keepDesktop };
 }
