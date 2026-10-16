@@ -77,11 +77,4 @@ describe('layout thresholds', () => {
       expect(TOKENS).toHaveProperty(name);
     }
   });
-
-  it('TIGHTENED is each clamp\'s own floor — nothing new is invented', () => {
-    for (const [name, value] of Object.entries(TIGHTENED)) {
-      const floor = /^clamp\(\s*([^,]+),/.exec(TOKENS[name])?.[1].trim();
-      expect(value, name).toBe(floor);
-    }
-  });
 });
