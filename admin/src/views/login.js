@@ -13,10 +13,27 @@ const TOKEN_URL = 'https://github.com/settings/personal-access-tokens/new';
 export function renderLogin(root, { config, onSubmit, error }) {
   clear(root);
 
+  // The token is a password as far as the browser is concerned, and that is
+  // the point: a password manager is the one place that can hold it between
+  // visits without this page storing anything. `autocomplete="off"` here used to
+  // forbid exactly that, which is why people were pasting a fresh token every
+  // time. The page itself still keeps nothing beyond the tab (see state.js).
   const tokenInput = el('input', {
-    type: 'password', id: 'token', name: 'token', autocomplete: 'off',
+    type: 'password', id: 'token', name: 'password', autocomplete: 'current-password',
     spellcheck: false, required: true, 'aria-describedby': 'token-hint',
     placeholder: 'github_pat_…',
+  });
+
+  // Password managers save a credential as a username plus a password, and
+  // decline to save a lone password field. This is the username: the
+  // repository, so the saved entry reads "Reykjanesbaer/stefnurit" and is
+  // offered on this page only. It is hidden from sight and assistive
+  // technology and out of the tab order — it is bookkeeping for the browser,
+  // not a control a person is meant to use.
+  const usernameInput = el('input', {
+    type: 'text', name: 'username', autocomplete: 'username', tabindex: '-1',
+    'aria-hidden': 'true', class: 'visually-hidden',
+    value: `${config.owner}/${config.repo}`,
   });
 
   const remember = el('input', { type: 'checkbox', id: 'remember' });
@@ -58,8 +75,11 @@ export function renderLogin(root, { config, onSubmit, error }) {
       },
     },
   }, [
+    usernameInput,
     field('token', 'Aðgangslykill (fine-grained personal access token)', tokenInput,
-      'Lykillinn er aðeins geymdur í minni vafrans og sendur eingöngu á api.github.com.'),
+      'Þessi síða geymir lykilinn aðeins í minni vafrans og sendir hann eingöngu á api.github.com. '
+      + 'Vafrinn þinn eða lykilorðastjóri getur boðist til að muna hann — samþykktu það, '
+      + 'þá þarftu ekki að búa til nýjan lykil í hvert sinn.'),
     el('div', { class: 'checkbox-row' }, [
       remember,
       el('label', { for: 'remember', text: 'Muna á þessu tæki þar til flipanum er lokað' }),

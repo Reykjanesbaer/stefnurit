@@ -18,6 +18,8 @@ import { update } from '../state.js';
 import { TOKENS } from '../../../src/tokens.js';
 import { assess, darkenToPass, AA_NORMAL, AA_LARGE } from '../../../src/contrast.js';
 import { formatTime } from '../ui/format.js';
+import { buildSnippets, clampHeight, DEFAULT_HEIGHT, STACKED_HEIGHT } from '../embed-snippets.js';
+import { copyText, selectContents } from '../ui/clipboard.js';
 
 /** The tokens this view offers. Colour only; the rest are geometry nobody asked to tune. */
 const COLOUR_TOKENS = [
@@ -300,68 +302,81 @@ export function renderStillingar(root, { state, onNavigate }) {
   // ---- innfelling -----------------------------------------------------------
 
   function embedSection(config) {
-    const scriptSnippet = [
-      `<script type="module" src="${config.siteUrl}/stefnu-rit.js"></script>`,
-      '',
-      `<stefnu-rit src="${config.siteUrl}/stefnurit.json"`,
-      `            fallback-href="${config.siteUrl}/"></stefnu-rit>`,
-    ].join('\n');
+    let height = DEFAULT_HEIGHT;
+    const blocks = [];
 
-    const iframeSnippet = [
-      '<iframe',
-      `  src="${config.siteUrl}/embed/frame.html?parent=${encodeURIComponent(originOf(config.siteUrl))}"`,
-      '  title="Stefnurit Reykjanesbæjar"',
-      '  width="100%" height="900" loading="lazy"',
-      '  style="border:0;max-width:100%"></iframe>',
-    ].join('\n');
+    const heightInput = el('input', {
+      type: 'number', id: 'innfelling-haed', min: '300', max: '5000', step: '50',
+      value: String(DEFAULT_HEIGHT), inputmode: 'numeric',
+      on: {
+        input: (event) => { height = clampHeight(event.target.value); refresh(); },
+        change: (event) => { event.target.value = String(height); },
+      },
+    });
 
-    return el('section', { class: 'card' }, [
+    const make = (title, description, key) => {
+      const code = el('code');
+      const pre = el('pre', { class: 'snippet-code', tabindex: '0' }, [code]);
+      const note = el('span', { class: 'hint', role: 'status', 'aria-live': 'polite' });
+      blocks.push({ key, code });
+
+      return el('div', { class: 'snippet' }, [
+        el('h3', { text: title }),
+        el('p', { class: 'hint', text: description }),
+        pre,
+        el('div', { class: 'card-actions' }, [
+          el('button', {
+            class: 'ghost', text: 'Afrita',
+            on: {
+              click: async () => {
+                if (await copyText(code.textContent)) {
+                  note.textContent = 'Afritað.';
+                } else {
+                  // Clipboard permission is not guaranteed; selecting the text
+                  // leaves the person one keystroke from the same result.
+                  selectContents(pre);
+                  note.textContent = 'Kóðinn er valinn — afritaðu með Ctrl+C.';
+                }
+              },
+            },
+          }),
+          note,
+        ]),
+      ]);
+    };
+
+    function refresh() {
+      const snippets = buildSnippets(config, { height });
+      for (const { key, code } of blocks) code.textContent = snippets[key];
+    }
+
+    const section = el('section', { class: 'card', id: 'innfelling' }, [
       el('h2', { text: 'Innfelling' }),
-      el('p', { class: 'hint', text: 'Afritaðu þann kóða sem passar vefsíðunni og límdu hann þar sem ritið á að birtast.' }),
-      snippet('Vefhluti (ráðlagt)',
-        'Ritið verður hluti af síðunni, tekur upp fulla breidd og hæð hennar og þarf ekkert JavaScript frá þér.',
-        scriptSnippet),
-      snippet('Rammi (iframe)',
-        'Fyrir vefumsjónarkerfi sem leyfa ekki eigin script-merki. Ramminn segir síðunni hæð sína, en aðeins ef '
-        + 'veffangið hennar er á listanum í embed/embed-config.json.',
-        iframeSnippet),
+      el('p', { class: 'hint', text: 'Afritaðu þann kóða sem passar vefsíðunni og límdu hann þar sem ritið á að birtast. '
+        + 'Sama kóða má afrita með hnappinum „Afrita iframe“ efst á hverri síðu.' }),
+      field('innfelling-haed', 'Hæð rammans í punktum', heightInput,
+        `Frá 923 punkta breidd er ritið um 940 punkta hátt, en undir 923 punkta breidd raðast það upp og þarf um ${STACKED_HEIGHT}. `
+        + 'Rammi með fastri hæð veit ekki hvort verður, svo veldu hærri töluna ef síðan er mjó. '
+        + 'Fyrir sjálfvirka hæð: notaðu seinni kóðann hér fyrir neðan.'),
+      make('Rammi (iframe) — líma beint',
+        'Virkar í Payload og öðrum vefumsjónarkerfum sem leyfa iframe. Hæðin er föst.',
+        'iframe'),
+      make('Rammi með sjálfvirkri hæð',
+        'Fyrir síðu sem má keyra JavaScript. Ramminn segir síðunni hvað hann er hár og hún stækkar hann. '
+        + 'Það virkar aðeins ef veffang síðunnar er á listanum í embed/embed-config.json.',
+        'iframeAuto'),
+      make('Vefhluti (fyrir síðu sem leyfir script)',
+        'Ritið verður hluti af síðunni sjálfri og stillir hæð sína sjálft.',
+        'element'),
       el('p', { class: 'hint' }, [
         'Nánari leiðbeiningar, þar með talið CSP-kröfur: ',
         externalLink(`${config.repoUrl}/blob/${config.defaultBranch}/docs/embedding.md`, 'docs/embedding.md'),
         '.',
       ]),
     ]);
-  }
 
-  function snippet(title, description, code) {
-    const pre = el('pre', { class: 'snippet-code', tabindex: '0' }, [el('code', { text: code })]);
-    const note = el('span', { class: 'hint', role: 'status', 'aria-live': 'polite' });
-
-    return el('div', { class: 'snippet' }, [
-      el('h3', { text: title }),
-      el('p', { class: 'hint', text: description }),
-      pre,
-      el('div', { class: 'card-actions' }, [
-        el('button', {
-          class: 'ghost', text: 'Afrita',
-          on: {
-            click: async (event) => {
-              try {
-                await navigator.clipboard.writeText(code);
-                note.textContent = 'Afritað.';
-              } catch {
-                // Clipboard permission is not guaranteed; selecting the text
-                // leaves the person one keystroke from the same result.
-                selectAll(pre);
-                note.textContent = 'Kóðinn er valinn — afritaðu með Ctrl+C.';
-              }
-              event.target.blur();
-            },
-          },
-        }),
-        note,
-      ]),
-    ]);
+    refresh();
+    return section;
   }
 
   // ---- um stjórnborðið ------------------------------------------------------
@@ -413,16 +428,6 @@ function normaliseHex(value) {
   return '#000000';
 }
 
-function originOf(url) {
-  try { return new URL(url).origin; } catch { return url; }
-}
 
-function selectAll(node) {
-  const range = document.createRange();
-  range.selectNodeContents(node);
-  const selection = getSelection();
-  selection.removeAllRanges();
-  selection.addRange(range);
-}
 
 export { formatRatio, normaliseHex, PAIRS, COLOUR_TOKENS };

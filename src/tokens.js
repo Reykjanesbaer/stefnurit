@@ -16,26 +16,29 @@
 /**
  * Below this width the column tree gives way to a stacked rail.
  *
- * Set by the content, not by a device. The binding measurement is
- * "Upplýsingaöryggisstefna", the longest label in the document: it wants about
- * 185 px on one line at the body size, and Chromium ships no Icelandic
- * hyphenation patterns, so a label box narrower than that has to break the
- * compound mid-syllable.
+ * It was 1400, then 1240; it is 923 because that is the width a real page gives
+ * the widget — a content column of 923px used to get the phone layout, and the
+ * five-column tree reads far better there than a long stack does.
  *
- * The threshold used to be 1400, which stacked every laptop made in the last
- * decade. It is 1240 now because between 1240 and 1400 five columns survive on
- * the design's own minimum spacing — see TIGHTEN_BELOW — with room to spare: a
- * tightened column at 1240 gives the compound a 212 px label box, where the
- * same column at 1400 on full spacing gives it 216 px. The mid-syllable break
- * does not arrive until about 1080, so 1240 stops well clear of it rather than
- * on top of it, and leaves the stacked rail for widths where a fifth of the row
- * is genuinely too narrow to read. Measured, not guessed:
- * docs/qa/README.md tabulates it at every width `npm run qa` renders.
+ * What makes 923 possible is not room but economy: the layout drops its padding
+ * in two steps (TIGHTENED, then COMPACT) and long compound words may break at
+ * their seams (src/seams.js) instead of in the middle of a syllable. Chromium
+ * ships no Icelandic hyphenation patterns, so without the seams a column
+ * narrower than "Upplýsingaöryggisstefna" would break it anywhere at all.
+ *
+ * Type stays at its 15px floor throughout; nothing here shrinks text to make
+ * the columns fit. Measured, not guessed: docs/qa/README.md has the numbers.
  */
-export const STACK_BELOW = 1240;
+export const STACK_BELOW = 923;
 
 /**
- * Between STACK_BELOW and this width, spacing drops to the design's own floors.
+ * Between STACK_BELOW and this width, spacing is COMPACT; between this and
+ * TIGHTEN_BELOW it is TIGHTENED; at and above TIGHTEN_BELOW it is the design.
+ */
+export const COMPACT_BELOW = 1240;
+
+/**
+ * Between COMPACT_BELOW and this width, spacing drops to the design's own floors.
  *
  * Every token the band overrides is set to the low end of a clamp this file
  * already declares, so nothing new is invented — a 1280 px laptop simply gets
@@ -43,16 +46,11 @@ export const STACK_BELOW = 1240;
  *
  * At and above this width not one pixel changes. That is a hard constraint, not
  * a preference: the layout at 1400 px and up is the design that was signed off,
- * and `npm run qa` renders it at 1400 for exactly that reason.
+ * and `npm run qa:diff` compares against it.
  */
 export const TIGHTEN_BELOW = 1400;
 
-/**
- * The token overrides that apply in the tightened band.
- *
- * Values, not a stylesheet, so the test suite can assert that each one is the
- * floor of the clamp it replaces rather than an arbitrary smaller number.
- */
+/** Token overrides for COMPACT_BELOW..TIGHTEN_BELOW: the clamps' own floors. */
 export const TIGHTENED = {
   'page-padding-inline': '1rem',
   'column-gap': '0.4rem',
@@ -60,6 +58,24 @@ export const TIGHTENED = {
   'card-padding-block': '0.85rem',
   'backing-offset': '8px',
   'backing-inset': '5px',
+};
+
+/**
+ * Token overrides for STACK_BELOW..COMPACT_BELOW.
+ *
+ * Deliberately *below* the floors the clamps declare — this is the one band
+ * where that is allowed, because it exists to fit five columns into 923px. The
+ * page keeps only 0.15px either side, so the tree runs edge to edge in the
+ * column the host page gives it; the host supplies its own margins.
+ */
+export const COMPACT = {
+  'page-padding-inline': '0.15px',
+  'column-gap': '0.25rem',
+  'card-padding-inline': '0.5rem',
+  'card-padding-block': '0.7rem',
+  'backing-offset': '6px',
+  'backing-inset': '4px',
+  'bullet-gap': '0.5em',
 };
 
 export const TOKENS = {

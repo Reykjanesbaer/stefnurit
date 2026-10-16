@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { readFileSync } from 'node:fs';
-import { TOKENS, STACK_BELOW, TIGHTEN_BELOW, TIGHTENED } from '../../src/tokens.js';
+import { TOKENS, STACK_BELOW, COMPACT_BELOW, TIGHTEN_BELOW, TIGHTENED } from '../../src/tokens.js';
 
 const data = JSON.parse(readFileSync(new URL('../../src/data/stefnurit.json', import.meta.url), 'utf8'));
 
@@ -149,7 +149,9 @@ test.describe('the tightened band', () => {
   });
 
   /** What the band is for: a laptop keeps the columns instead of stacking. */
-  for (const width of [TIGHTEN_BELOW - 1, 1366, 1280, STACK_BELOW]) {
+  // COMPACT_BELOW is the band's own floor; below it the spacing is COMPACT, which
+  // tests/e2e/breakpoints.spec.js covers.
+  for (const width of [TIGHTEN_BELOW - 1, 1366, 1280, COMPACT_BELOW]) {
     test(`keeps the columns and the tree at ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 1200 });
       await page.goto('/demo/index.html');

@@ -15,21 +15,34 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { withWidget, openWidget } from './render.mjs';
-import { STACK_BELOW, TIGHTEN_BELOW } from '../src/tokens.js';
+import { STACK_BELOW, COMPACT_BELOW, TIGHTEN_BELOW } from '../src/tokens.js';
 
 const QA = fileURLToPath(new URL('../docs/qa/', import.meta.url));
 
+/** Which of the four spacing regimes a width falls in. */
+const layoutAt = (width) => {
+  if (width >= TIGHTEN_BELOW) return 'signed-off layout';
+  if (width >= COMPACT_BELOW) return 'five columns, tightened';
+  if (width >= STACK_BELOW) return 'five columns, compact';
+  return 'stacked';
+};
+
+// 923 and 922 are the pair that matter most: a real page column of 923px is
+// where the widget must be a tree, and one pixel less is where it stacks.
 const WIDTHS = [
   { width: 1850, name: 'wide', note: 'full-width embed' },
   { width: 1440, name: 'desktop', note: 'typical desktop page' },
   { width: 1400, name: 'signed-off', note: `${TIGHTEN_BELOW}px — full spacing, the design as signed off` },
-  { width: 1366, name: 'laptop', note: 'tightened columns' },
-  { width: 1280, name: 'small-laptop', note: 'tightened columns' },
-  { width: STACK_BELOW, name: 'band-floor', note: `${STACK_BELOW}px — the narrowest tightened row` },
-  { width: 1200, name: 'narrow', note: `below ${STACK_BELOW}px — stacked` },
+  { width: 1366, name: 'laptop', note: 'common laptop' },
+  { width: 1280, name: 'small-laptop', note: 'common laptop' },
+  { width: COMPACT_BELOW, name: 'band-floor', note: `${COMPACT_BELOW}px — the narrowest tightened row` },
+  { width: 1200, name: 'narrow', note: 'compact band' },
+  { width: 1100, name: 'compact', note: 'compact band' },
+  { width: STACK_BELOW, name: 'narrow-tree', note: `${STACK_BELOW}px — the narrowest five-column width` },
+  { width: STACK_BELOW - 1, name: 'narrow-stack', note: 'one pixel narrower: stacked' },
   { width: 768, name: 'tablet', note: 'stacked' },
   { width: 390, name: 'phone', note: 'stacked' },
-];
+].map((entry) => ({ ...entry, note: `${entry.note} — ${layoutAt(entry.width)}` }));
 
 /**
  * The longest label in the document. It is what sets STACK_BELOW, so the
@@ -73,10 +86,45 @@ const audit = (page) => page.locator('stefnu-rit').evaluate((el, longest) => {
     label = { wants, box };
   }
 
+  // A word may only break at a space, a hyphen or one of its marked seams. A
+  // break anywhere else — "Upplýsingaöryggisstefn" over "a" — is the failure the
+  // seams exist to prevent, and it is invisible to a width or overflow check.
+  const midWord = [];
+  for (const label of root.querySelectorAll('.label')) {
+    const chars = [];
+    const seams = new Set();
+    const walk = (node) => {
+      for (const child of node.childNodes) {
+        if (child.nodeType === 3) for (let i = 0; i < child.data.length; i += 1) chars.push([child, i]);
+        else if (child.classList?.contains('seam')) seams.add(chars.length);
+        else if (child.nodeType === 1 && child.tagName.toLowerCase() !== 'svg') walk(child);
+      }
+    };
+    walk(label);
+
+    let previousTop = null;
+    chars.forEach(([node, i], index) => {
+      const range = document.createRange();
+      range.setStart(node, i);
+      range.setEnd(node, i + 1);
+      const rect = range.getClientRects()[0];
+      if (!rect) return;
+      const top = Math.round(rect.top);
+      if (previousTop !== null && top > previousTop + 3 && index > 0) {
+        const [beforeNode, beforeAt] = chars[index - 1];
+        const before = beforeNode.data[beforeAt];
+        const ok = /\s/.test(before) || /\s/.test(node.data[i]) || before === '-' || seams.has(index);
+        if (!ok) midWord.push(label.textContent.trim().slice(0, 30));
+      }
+      previousTop = top;
+    });
+  }
+
   const lines = [...root.querySelectorAll('.lines line')].map((l) => l.dataset.role);
   return {
     label,
     minFontSize: sizes.length ? Math.min(...sizes) : null,
+    midWord: [...new Set(midWord)],
     overflowing,
     lines: lines.reduce((acc, role) => ({ ...acc, [role]: (acc[role] ?? 0) + 1 }), {}),
     height: Math.round(el.getBoundingClientRect().height),
@@ -101,6 +149,9 @@ await withWidget(async ({ browser, origin }) => {
     }
     if (result.overflowing.length) {
       problems.push(`${result.overflowing.length} label(s) outside their card: ${result.overflowing.join('; ')}`);
+    }
+    if (result.midWord.length) {
+      problems.push(`${result.midWord.length} word(s) broken mid-syllable: ${result.midWord.join('; ')}`);
     }
     if (messages.length) problems.push(`console: ${messages.join(' / ')}`);
     if (problems.length) failed = true;
@@ -129,20 +180,26 @@ Body text never drops below 15px: the type scale is fluid between a readable
 floor and the size the original used at full width, rather than shrinking in
 proportion to the widget.
 
-The column tree needs about ${STACK_BELOW}px. The *longest label* column above
-is the measurement behind that: "Upplýsingaöryggisstefna" wants the first
-number on one line and has the second to fit in. Chromium has no Icelandic
-hyphenation patterns, so once the box is narrower than the word the compound
-has to break mid-syllable. Below ${STACK_BELOW}px the layout stacks instead,
-keeping to a readable measure with the rail in its own gutter.
+The column tree is used from ${STACK_BELOW}px up. Spacing steps down in three
+regimes so the five columns fit:
 
-Between ${STACK_BELOW}px and ${TIGHTEN_BELOW}px the five columns are kept, with
-spacing dropped to the floors declared in \`src/tokens.js\` — the same values a
-phone gets. That is what the tightened rows above show: a 1366px laptop
-gives the longest label *more* room than 1400px does on full spacing, because
-the padding and gaps it gives back are worth more than the 34px of page width.
-At and above ${TIGHTEN_BELOW}px nothing is tightened, so the signed-off layout
-is unchanged.
+| Width | Spacing |
+|---|---|
+| ${TIGHTEN_BELOW}px and up | the signed-off design, frozen (\`npm run qa:diff\`) |
+| ${COMPACT_BELOW}–${TIGHTEN_BELOW - 1}px | the clamps' own floors (\`TIGHTENED\`) |
+| ${STACK_BELOW}–${COMPACT_BELOW - 1}px | edge to edge, 0.15px page padding (\`COMPACT\`) |
+| below ${STACK_BELOW}px | stacked, with the rail in its own gutter |
+
+Chromium has no Icelandic hyphenation patterns, so a long compound in a narrow
+column would be broken mid-syllable. Words may instead break at their seams
+(Upplýsinga-öryggis-stefna), and every width above is checked for any break that
+is not at a space, a hyphen or a seam.
+
+The *longest label* column is the measurement behind these limits:
+"Upplýsingaöryggisstefna" wants the first number on one line and has the second
+to fit in. At the compact widths the box is narrower than the word, which is
+why it breaks at its seams there instead of anywhere at all.
+
 
 ## Screenshots
 

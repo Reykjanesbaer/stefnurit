@@ -14,7 +14,8 @@
  * No dependencies, no build step required, no framework.
  */
 
-import { TOKENS, THEMEABLE, STACK_BELOW, TIGHTEN_BELOW, TIGHTENED } from './tokens.js';
+import { TOKENS, THEMEABLE, STACK_BELOW, COMPACT_BELOW, TIGHTEN_BELOW, TIGHTENED, COMPACT } from './tokens.js';
+import { withSeams } from './seams.js';
 import { FIGTREE_FACES } from './assets/fonts.js';
 import { validate } from './validate.js';
 import { routeTree, routeRail } from './lines.js';
@@ -270,22 +271,34 @@ a.pill:focus-visible {
   flex: none;
 }
 
-/* ---- tightened columns ------------------------------------------------------
-   A 1280 or 1366 px laptop has room for five columns, but not for five columns
-   plus the page padding and gaps the design uses at 1850. Rather than stack a
-   screen that is plainly wide enough, spacing drops to the floors declared in
-   tokens.js — the same values a phone gets — and the columns stay.
+/* ---- tightened and compact columns -------------------------------------------
+   A laptop or a CMS column has room for five columns, but not for five columns
+   plus the padding and gaps the design uses at 1850. Rather than stack a width
+   that is plainly enough, spacing steps down and the columns stay: TIGHTENED
+   to the floors declared in tokens.js, then COMPACT — below them, edge to edge —
+   down to STACK_BELOW.
 
    The overrides land on .root rather than :host because :host is the container
    itself, and a container query cannot style its own container.
 
-   The band stops one pixel below TIGHTEN_BELOW. Above it nothing here applies,
-   which is what keeps the signed-off layout pixel-identical. */
-@container (min-width: ${STACK_BELOW}px) and (max-width: ${TIGHTEN_BELOW - 1}px) {
+   Both bands stop one pixel short of the next. At and above TIGHTEN_BELOW
+   nothing here applies, which is what keeps the signed-off layout
+   pixel-identical. */
+@container (min-width: ${COMPACT_BELOW}px) and (max-width: ${TIGHTEN_BELOW - 1}px) {
   .root {
 ${Object.entries(TIGHTENED).map(([name, value]) => `    --sr-${name}: ${value};`).join('\n')}
   }
 }
+@container (min-width: ${STACK_BELOW}px) and (max-width: ${COMPACT_BELOW - 1}px) {
+  .root {
+${Object.entries(COMPACT).map(([name, value]) => `    --sr-${name}: ${value};`).join('\n')}
+  }
+}
+
+/* Where a compound word may break. The spans that carry this only exist below
+   TIGHTEN_BELOW (see #syncSeams), so the signed-off layout is untouched: even an
+   empty inline span nudges text by a fraction of a pixel. */
+.seam::before { content: '\\00AD'; }
 
 /* ---- stacked layout -------------------------------------------------------- */
 
@@ -379,7 +392,7 @@ const esc = (s) => String(s).replace(/[&<>"']/g, (c) => (
  * nowrap` would forbid that too, and the word would run out of the card.
  */
 function labelWithIcon(label, icon) {
-  return `<span class="label">${esc(label)}&nbsp;${icon}</span>`;
+  return `<span class="label" data-label="${esc(label)}">${esc(label)}&nbsp;${icon}</span>`;
 }
 
 /** Bumped by hand; exposed as element.version and printed in the bundle banner. */
@@ -395,6 +408,7 @@ export class StefnuRit extends HTMLElement {
   #config = null;
   #stale = false;
   #resizeObserver = null;
+  #seamed = false;
   #frame = 0;
 
   constructor() {
@@ -541,7 +555,40 @@ export class StefnuRit extends HTMLElement {
     this.#shadow.innerHTML = `<style>${css}</style><style>${this.#themeCss(data.theme)}</style>${this.#markup(data)}`;
     this.setAttribute('data-ready', '');
     this.#wireLinkEvents();
+    // Fresh markup has no seams; decide now, before first paint, so a narrow
+    // embed never flashes a word broken mid-syllable.
+    this.#seamed = false;
+    this.#syncSeams();
     this.#scheduleLines();
+  }
+
+  /**
+   * Offer compound-word breaks (src/seams.js) below the signed-off width, and
+   * take them away at and above it.
+   *
+   * Not done in markup: an empty inline span shifts text by a fraction of a
+   * pixel, and the layout at TIGHTEN_BELOW and up is frozen pixel for pixel.
+   * Only labels that actually have a seam are touched.
+   */
+  #syncSeams() {
+    const width = this.getBoundingClientRect().width;
+    if (!width) return;                       // not laid out yet; a later pass decides
+    const want = width < TIGHTEN_BELOW;
+    if (want === this.#seamed) return;
+    this.#seamed = want;
+
+    for (const label of this.#shadow.querySelectorAll('.label[data-label]')) {
+      const raw = label.dataset.label;
+      const marked = withSeams(raw, esc);
+      if (marked === esc(raw)) continue;      // nothing to mark in this one
+      const icon = label.querySelector('svg');
+      const holder = document.createElement('template');
+      holder.innerHTML = want ? marked : esc(raw);
+      label.replaceChildren(
+        holder.content,
+        ...(icon ? [document.createTextNode('\u00a0'), icon] : []),
+      );
+    }
   }
 
   /**
@@ -656,7 +703,7 @@ export class StefnuRit extends HTMLElement {
   #pill(item) {
     const token = item.colorToken || 'pill';
     const linked = typeof item.href === 'string' && item.href !== '' && item.kind !== 'none';
-    const inner = linked ? labelWithIcon(item.label, ICON) : `<span class="label">${esc(item.label)}</span>`;
+    const inner = linked ? labelWithIcon(item.label, ICON) : `<span class="label" data-label="${esc(item.label)}">${esc(item.label)}</span>`;
     if (!linked) {
       return `<span class="pill box--${token}" id="${esc(item.id)}" aria-disabled="true">${inner}</span>`;
     }
@@ -677,6 +724,7 @@ export class StefnuRit extends HTMLElement {
    * makes adding or removing a column re-route the lines by itself.
    */
   #drawLines() {
+    this.#syncSeams();
     const root = this.#shadow.querySelector('.root');
     const svg = this.#shadow.querySelector('.lines');
     if (!root || !svg) return;

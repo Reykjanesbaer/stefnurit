@@ -70,7 +70,7 @@ Enginn gagnagrunnur, engin innskráning. Drög geymast í vafranum þínum þang
 <!-- Reserve the box so the page does not jump while the script loads -->
 <style>
   stefnu-rit:not([data-ready]) { display: block; aspect-ratio: 5 / 3; }
-  @media (max-width: 1399px) {
+  @media (max-width: 922px) {
     stefnu-rit:not([data-ready]) { aspect-ratio: auto; min-height: 82rem; }
   }
 </style>
