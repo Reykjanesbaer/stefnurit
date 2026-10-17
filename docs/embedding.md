@@ -10,7 +10,7 @@ Two ways. Pick the script tag unless the CMS forbids it.
 <style>
   /* Reserve the box so the page does not jump while the script loads. */
   stefnu-rit:not([data-ready]) { display: block; min-height: 56rem; }
-  @media (max-width: 922px) {
+  @media (max-width: 699px) {
     stefnu-rit:not([data-ready]) { min-height: 82rem; }
   }
 </style>
@@ -83,7 +83,7 @@ The addresses come from [`site.config.json`](../site.config.json) through
 ### Height
 
 An iframe cannot size itself to its content, so the plain snippet has a fixed
-height. Measured: about **940 px** with five columns (923 px and wider) and about
+height. Measured: about **800–980 px** with five columns (700 px and wider) and about
 **1400 px** once the layout stacks (narrower). `1000` suits a wide column; raise
 it to about `1450` when the page that shows it is narrow, or the frame will
 scroll inside itself.

@@ -27,8 +27,8 @@ const layoutAt = (width) => {
   return 'stacked';
 };
 
-// 923 and 922 are the pair that matter most: a real page column of 923px is
-// where the widget must be a tree, and one pixel less is where it stacks.
+// STACK_BELOW and one pixel under it are the pair that matter most: that is where
+// the tree stops fitting, and 785 and 768 are the tablet widths that sit just above.
 const WIDTHS = [
   { width: 1850, name: 'wide', note: 'full-width embed' },
   { width: 1440, name: 'desktop', note: 'typical desktop page' },
@@ -38,9 +38,11 @@ const WIDTHS = [
   { width: COMPACT_BELOW, name: 'band-floor', note: `${COMPACT_BELOW}px — the narrowest tightened row` },
   { width: 1200, name: 'narrow', note: 'compact band' },
   { width: 1100, name: 'compact', note: 'compact band' },
-  { width: STACK_BELOW, name: 'narrow-tree', note: `${STACK_BELOW}px — the narrowest five-column width` },
+  { width: 923, name: 'narrow-tree', note: 'a common page column' },
+  { width: 785, name: 'tablet-wide', note: 'a narrow browser window' },
+  { width: 768, name: 'tablet', note: 'a tablet' },
+  { width: STACK_BELOW, name: 'narrowest-tree', note: `${STACK_BELOW}px — the narrowest five-column width` },
   { width: STACK_BELOW - 1, name: 'narrow-stack', note: 'one pixel narrower: stacked' },
-  { width: 768, name: 'tablet', note: 'stacked' },
   { width: 390, name: 'phone', note: 'stacked' },
 ].map((entry) => ({ ...entry, note: `${entry.note} — ${layoutAt(entry.width)}` }));
 

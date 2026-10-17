@@ -1,9 +1,11 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { STACK_BELOW } from '../../src/tokens.js';
 
 /**
- * The widget at the widths a page actually gives it. 923px is the one that
- * motivated this file: a 923px content column used to get the phone layout.
+ * The widget at the widths a page actually gives it. This file exists because
+ * a 923px column, and then a 785px one, used to get the phone layout; the tree
+ * now holds down to STACK_BELOW (700px), where it stops fitting.
  */
 // The demo page frames the widget with its own margins; strip them so the
 // widget gets the whole viewport, as it does in an embed.
@@ -46,13 +48,17 @@ const facts = (page) => page.locator('stefnu-rit').evaluate((host) => {
       const r = l.getBoundingClientRect();
       return r.right > c.right + 1 || r.left < c.left - 1;
     }).length,
+    titlesOutside: [...root.querySelectorAll('.card-title, .pill')].filter((t) => {
+      const box = (t.closest('.card') ?? t).getBoundingClientRect();
+      return t.scrollWidth > t.clientWidth + 1 || t.getBoundingClientRect().right > box.right + 1;
+    }).length,
     seams: root.querySelectorAll('.seam').length,
     lines: [...root.querySelectorAll('.lines line')].map((l) => l.dataset.role),
     pageOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
   };
 });
 
-test.describe('923px', () => {
+test.describe('narrow trees', () => {
   test('is the full five-column tree, not the phone layout', async ({ page }) => {
     await open(page, 923);
     const f = await facts(page);
@@ -70,7 +76,7 @@ test.describe('923px', () => {
   });
 
   test('one pixel narrower it stacks', async ({ page }) => {
-    await open(page, 922);
+    await open(page, STACK_BELOW - 1);
     const f = await facts(page);
     expect(f.stacked).toBe(true);
     expect(f.lines).not.toContain('trunk');
@@ -142,6 +148,40 @@ test.describe('923px', () => {
   });
 });
 
+test.describe('785px and the other tablet widths', () => {
+  for (const width of [785, 768, STACK_BELOW]) {
+    test(`${width}px is the desktop tree: five columns, titles inside their cards, no broken words`, async ({ page }) => {
+      await open(page, width);
+      const f = await facts(page);
+      expect(f.stacked).toBe(false);
+      expect(f.columns).toBe(5);
+      expect(f.lines).toContain('trunk');
+      expect(f.outside).toBe(0);
+      expect(f.titlesOutside).toBe(0);
+      expect(f.minFont).toBeGreaterThanOrEqual(15);
+      expect(f.pageOverflow).toBe(0);
+      expect(f.padLeft).toBeCloseTo(0.15, 2);
+    });
+  }
+
+  test('the height of the box has no say in the layout', async ({ page }) => {
+    // Typing a size into an embed can change its height as well as its width. Only
+    // the width may matter: the widget keys off its own width and nothing else.
+    const layoutAt = async (width, height) => {
+      await page.setViewportSize({ width, height });
+      await page.goto('/demo/index.html');
+      await page.addStyleTag({ content: BARE });
+      await page.waitForFunction(() => document.querySelector('stefnu-rit')?.shadowRoot?.querySelectorAll('.card').length > 0);
+      await page.waitForTimeout(250);
+      const f = await facts(page);
+      return { stacked: f.stacked, columns: f.columns };
+    };
+    for (const height of [300, 785, 1200, 3000]) {
+      expect(await layoutAt(785, height), `${height}px tall`).toEqual({ stacked: false, columns: 5 });
+    }
+  });
+});
+
 test.describe('seams follow the width', () => {
   test('are absent from the signed-off layout, so it stays pixel-identical', async ({ page }) => {
     await open(page, 1440);
@@ -161,8 +201,8 @@ test.describe('seams follow the width', () => {
     await expect.poll(async () => (await facts(page)).seams).toBe(0);
   });
 
-  test('every width from 923 to 1399 keeps five columns, inside their cards, at 15px or more', async ({ page }) => {
-    for (const width of [923, 1000, 1100, 1239, 1240, 1366, 1399]) {
+  test(`every width from ${STACK_BELOW} to 1399 keeps five columns, inside their cards, at 15px or more`, async ({ page }) => {
+    for (const width of [STACK_BELOW, 768, 785, 923, 1000, 1100, 1239, 1240, 1366, 1399]) {
       await open(page, width);
       const f = await facts(page);
       expect(f.columns, `${width}px`).toBe(5);

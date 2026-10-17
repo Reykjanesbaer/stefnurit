@@ -16,20 +16,29 @@
 /**
  * Below this width the column tree gives way to a stacked rail.
  *
- * It was 1400, then 1240; it is 923 because that is the width a real page gives
- * the widget — a content column of 923px used to get the phone layout, and the
- * five-column tree reads far better there than a long stack does.
+ * It was 1400, then 1240, then 923; it is 700 because that is where the tree
+ * stops fitting, not where a device class starts. Measured with the COMPACT
+ * spacing below, type at its 15px floor and long words breaking at their seams:
+ * from 700px up every label stays inside its card, no word breaks mid-syllable
+ * and every card title fits. At 650px "Menningarmál" and "Umhverfismál" already
+ * run out of their cards, and at 600px four of the six titles do. Docs and the
+ * per-width table are in docs/qa/README.md.
  *
- * What makes 923 possible is not room but economy: the layout drops its padding
+ * So 785px, a tablet at 768px and a narrow browser window all get the tree. A
+ * page that wants the tree below 700px cannot have it at a readable size; the
+ * iframe snippet keeps it at 700px and lets the frame scroll sideways instead
+ * (admin/src/embed-snippets.js).
+ *
+ * What makes the narrow widths possible is economy: the layout drops its padding
  * in two steps (TIGHTENED, then COMPACT) and long compound words may break at
  * their seams (src/seams.js) instead of in the middle of a syllable. Chromium
  * ships no Icelandic hyphenation patterns, so without the seams a column
  * narrower than "Upplýsingaöryggisstefna" would break it anywhere at all.
  *
  * Type stays at its 15px floor throughout; nothing here shrinks text to make
- * the columns fit. Measured, not guessed: docs/qa/README.md has the numbers.
+ * the columns fit.
  */
-export const STACK_BELOW = 923;
+export const STACK_BELOW = 700;
 
 /**
  * Between STACK_BELOW and this width, spacing is COMPACT; between this and
@@ -64,7 +73,7 @@ export const TIGHTENED = {
  * Token overrides for STACK_BELOW..COMPACT_BELOW.
  *
  * Deliberately *below* the floors the clamps declare — this is the one band
- * where that is allowed, because it exists to fit five columns into 923px. The
+ * where that is allowed, because it exists to fit five columns into 700px. The
  * page keeps only 0.15px either side, so the tree runs edge to edge in the
  * column the host page gives it; the host supplies its own margins.
  */

@@ -19,6 +19,7 @@ import { TOKENS } from '../../../src/tokens.js';
 import { assess, darkenToPass, AA_NORMAL, AA_LARGE } from '../../../src/contrast.js';
 import { formatTime } from '../ui/format.js';
 import { buildSnippets, clampHeight, DEFAULT_HEIGHT, STACKED_HEIGHT } from '../embed-snippets.js';
+import { STACK_BELOW } from '../../../src/tokens.js';
 import { copyText, selectContents } from '../ui/clipboard.js';
 
 /** The tokens this view offers. Colour only; the rest are geometry nobody asked to tune. */
@@ -303,6 +304,7 @@ export function renderStillingar(root, { state, onNavigate }) {
 
   function embedSection(config) {
     let height = DEFAULT_HEIGHT;
+    let keepDesktop = true;
     const blocks = [];
 
     const heightInput = el('input', {
@@ -346,7 +348,7 @@ export function renderStillingar(root, { state, onNavigate }) {
     };
 
     function refresh() {
-      const snippets = buildSnippets(config, { height });
+      const snippets = buildSnippets(config, { height, keepDesktop });
       for (const { key, code } of blocks) code.textContent = snippets[key];
     }
 
@@ -355,9 +357,20 @@ export function renderStillingar(root, { state, onNavigate }) {
       el('p', { class: 'hint', text: 'Afritaðu þann kóða sem passar vefsíðunni og límdu hann þar sem ritið á að birtast. '
         + 'Sama kóða má afrita með hnappinum „Afrita iframe“ efst á hverri síðu.' }),
       field('innfelling-haed', 'Hæð rammans í punktum', heightInput,
-        `Frá 923 punkta breidd er ritið um 940 punkta hátt, en undir 923 punkta breidd raðast það upp og þarf um ${STACKED_HEIGHT}. `
+        `Með fimm dálkum er ritið um 800–980 punkta hátt, en undir ${STACK_BELOW} punkta breidd raðast það upp og þarf um ${STACKED_HEIGHT}. `
         + 'Rammi með fastri hæð veit ekki hvort verður, svo veldu hærri töluna ef síðan er mjó. '
         + 'Fyrir sjálfvirka hæð: notaðu seinni kóðann hér fyrir neðan.'),
+      el('div', { class: 'checkbox-row' }, [
+        el('input', {
+          type: 'checkbox', id: 'innfelling-skrifbord', checked: true,
+          on: { change: (event) => { keepDesktop = event.target.checked; refresh(); } },
+        }),
+        el('label', {
+          for: 'innfelling-skrifbord',
+          text: `Halda skrifborðsútlitinu á mjóum skjá (ramminn skrunast til hliðar undir ${STACK_BELOW} px)`,
+        }),
+      ]),
+      el('p', { class: 'hint', text: 'Slökktu á þessu ef þú vilt frekar að ritið raðist upp og fylgi breidd síðunnar á símum.' }),
       make('Rammi (iframe) — líma beint',
         'Virkar í Payload og öðrum vefumsjónarkerfum sem leyfa iframe. Hæðin er föst.',
         'iframe'),
